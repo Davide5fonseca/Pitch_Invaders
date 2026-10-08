@@ -21,7 +21,7 @@ export function hideOverlay() {
 
 export function showMenu() {
   overlay().innerHTML = `<div class="card">
-    <h1>INVASÃO DE CAMPO</h1>
+    <h1>PITCH INVADERS</h1>
     <p>Salta para o relvado e foge aos seguranças o máximo de tempo possível!</p>
     <div class="rules">
       <span>📸</span><span>Selfie com o craque nº 10 (anel dourado)</span><em>+${SCORE.selfie}</em>

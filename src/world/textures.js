@@ -70,12 +70,12 @@ export function crowdCanvas() {
 
 export function adCanvas() {
   const [c, g] = canvas(1024, 64);
-  const ads = [['#0b3d91', 'INVASÃO FC'], ['#d0202a', 'GOLO TV'], ['#111', 'SUPER BOLA'], ['#f4a300', 'RELVADO+']];
+  const ads = [['#0b3d91', 'PITCH INVADERS'], ['#d0202a', 'GOLO TV'], ['#111', 'SUPER BOLA'], ['#f4a300', 'RELVADO+']];
   ads.forEach(([bg, txt], i) => {
     g.fillStyle = bg; g.fillRect(i * 256, 0, 256, 64);
     g.fillStyle = '#fff'; g.font = '900 34px system-ui, sans-serif';
     g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText(txt, i * 256 + 128, 34);
+    g.fillText(txt, i * 256 + 128, 34, 236);         // encolhe textos compridos para caberem
   });
   return c;
 }
