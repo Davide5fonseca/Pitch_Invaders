@@ -1,7 +1,8 @@
 // Mini-mapa no canto inferior direito.
 import { world } from '../state.js';
-import { HL, HW, GOAL_W, COLORS } from '../config.js';
+import { HL, HW, GOAL_W, COLORS, BROADCAST } from '../config.js';
 import { $, clamp } from '../utils.js';
+import { zoneState } from '../systems/broadcast.js';
 
 const ctx = $('map').getContext('2d');
 const S = 2, O = 8, W = 226, H = 152;      // 2 px por metro, 8 px de margem
@@ -26,10 +27,18 @@ export function drawMap() {
   g.strokeRect(O - 4, pz(-GOAL_W), 4, GOAL_W * 2 * S);
   g.strokeRect(O + 105 * S, pz(-GOAL_W), 4, GOAL_W * 2 * S);
 
+  // Círculo da câmara de TV
+  g.strokeStyle = '#ff3b30'; g.lineWidth = 2;
+  g.beginPath(); g.arc(px(zoneState.x), pz(zoneState.z), BROADCAST.radius * S, 0, Math.PI * 2); g.stroke();
+
   for (const n of npcs) if (n !== star) dot(n, 2, 'rgba(255,255,255,.35)');
   dot(star, 3.5, star.cool === 0 ? '#ffd166' : '#8a7440');
   dot(ball, 2.2, '#fff');
-  for (const s of stewards) if (s.active) dot(s, 3, s.police ? '#5b8cff' : '#ffcc00', '#000');
+  for (const s of stewards) {
+    if (!s.active) continue;
+    const down = s.mode === 'down' || s.mode === 'getup';   // caído no chão
+    dot(s, 3, down ? '#777' : s.police ? '#5b8cff' : '#ffcc00', '#000');
+  }
 
   // Cone de visão do invasor
   const a = Math.atan2(Math.cos(invader.heading), Math.sin(invader.heading));

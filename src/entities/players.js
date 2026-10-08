@@ -1,17 +1,20 @@
 // Jogadores das duas equipas (4-4-2), o craque nº 10 e o árbitro.
 import { world } from '../state.js';
-import { COLORS, HL, HW } from '../config.js';
+import { HL, HW } from '../config.js';
 import { rand, clamp } from '../utils.js';
 import { makeEntity, ring, label } from './character.js';
+import { KITS } from './kits.js';
 
+// Guarda-redes, 4 defesas, 4 médios, 2 avançados (o último é o craque)
 const FORMATION = [[-49, 0], [-36, -20], [-38, -7], [-38, 7], [-36, 20], [-20, -22], [-22, -7], [-22, 7], [-20, 22], [-7, -9], [-7, 9]];
+const NUMBERS = [1, 2, 4, 5, 3, 7, 6, 8, 11, 9, 10];
 const STAR_INDEX = 10;
 
 export function buildPlayers() {
-  const teams = [[1, COLORS.home, COLORS.homeGk], [-1, COLORS.away, COLORS.awayGk]];
-  for (const [side, color, gk] of teams) {
+  const teams = [[1, KITS.home, KITS.homeGk], [-1, KITS.away, KITS.awayGk]];
+  for (const [side, kit, gkKit] of teams) {
     FORMATION.forEach(([x, z], i) => {
-      const e = makeEntity(i === 0 ? gk : color, x * side, z * side);
+      const e = makeEntity(i === 0 ? gkKit : kit, x * side, z * side, { print: String(NUMBERS[i]) });
       Object.assign(e, { homeX: e.x, homeZ: e.z, tx: e.x, tz: e.z, wait: rand(0, 3), spd: 1.3, heading: side * Math.PI / 2 });
       world.npcs.push(e);
     });
@@ -23,7 +26,7 @@ export function buildPlayers() {
   world.starRing = ring('#ffd166', 0.7, 0.95);
   star.ch.root.add(world.starRing, label('★ 10', '#ffd166'));
 
-  const ref = makeEntity(COLORS.ref, 0, 12);
+  const ref = makeEntity(KITS.ref, 0, 12, { print: '' });
   Object.assign(ref, { isRef: true, homeX: 0, homeZ: 12, tx: 0, tz: 12, wait: 1, spd: 1.3 });
   world.npcs.push(ref);
 }

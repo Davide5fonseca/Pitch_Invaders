@@ -33,7 +33,10 @@ export function pointerGround() {
 export function initInput(handlers) {
   const canStart = () => game.state === 'menu' || game.state === 'over';
 
+  const typing = e => e.target instanceof Element && e.target.closest('input, textarea, button');
+
   addEventListener('keydown', e => {
+    if (typing(e)) return;                     // a escrever o nome na tabela de recordes
     keys[e.code] = true;
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
     if (e.code === 'Space' || e.code === 'Enter') {
@@ -68,6 +71,9 @@ export function initInput(handlers) {
     view.pitch = clamp(view.pitch - e.movementY * MOUSE_SENSITIVITY, -0.9, 0.7);
   });
 
-  $('overlay').addEventListener('click', () => { if (canStart()) handlers.start(); });
+  $('overlay').addEventListener('click', e => {
+    if (e.target.closest('.no-start')) return;  // cliques na tabela de recordes não recomeçam o jogo
+    if (canStart()) handlers.start();
+  });
   $('camBtn').addEventListener('click', e => { e.stopPropagation(); handlers.cycleCamera(); e.currentTarget.blur(); });
 }

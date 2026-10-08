@@ -3,10 +3,11 @@ import { world, game, view, relControls } from '../state.js';
 import { COLORS, PLAYER } from '../config.js';
 import { clamp, dist, forward, right } from '../utils.js';
 import { makeEntity, ring } from './character.js';
+import { KITS } from './kits.js';
 import { keys, pointer, pointerGround } from '../systems/input.js';
 
 export function buildInvader() {
-  const inv = makeEntity(COLORS.invader, 0, 36);
+  const inv = makeEntity(KITS.invader, 0, 36);
   inv.ch.root.add(ring(COLORS.invader, 0.55, 0.8));
   inv.ch.root.visible = false;
   world.invader = inv;

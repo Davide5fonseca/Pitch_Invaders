@@ -11,6 +11,7 @@ import { buildBall, placeBall } from './entities/ball.js';
 import { initInput } from './systems/input.js';
 import { updateCamera, setCamMode, updateCamButton } from './systems/camera.js';
 import { tryStart, dash, updatePlay } from './systems/game.js';
+import { buildBroadcast, updateBroadcast, renderLiveInset, zoneState } from './systems/broadcast.js';
 import { updateHud } from './ui/hud.js';
 import { drawMap } from './ui/minimap.js';
 import { showMenu } from './ui/menus.js';
@@ -36,7 +37,10 @@ function loop(now) {
     invader.ch.root.visible = inGame() && !firstPerson();   // na 1ª pessoa não vês o teu corpo
     const look = inGame() ? invader : world.ball;
     for (const n of world.npcs) place(n, dt, look);
-    for (const s of world.stewards) if (s.active) place(s, dt, invader);
+    for (const s of world.stewards) {
+      // A meio de um mergulho ou caído no chão, não roda para o invasor
+      if (s.active) place(s, dt, invader, s.mode !== 'chase' ? s.heading : undefined);
+    }
     if (inGame()) place(invader, dt, null, relControls() ? view.yaw : undefined);
     placeBall(dt);
 
@@ -46,12 +50,17 @@ function loop(now) {
 
     if (game.state === 'play') { updateHud(); drawMap(); }
     updateScreenFx();
+    updateBroadcast(dt, now);
   }
 
   updateCamera(dt);
   updateFloats(dt);
   render(camMode().id === 'peito' && inGame());
+  if (game.state !== 'loading') renderLiveInset();
 }
+
+// Só em desenvolvimento: acesso ao estado pela consola do browser (não vai para o site publicado)
+if (import.meta.env.DEV) window.__game = { game, view, world, zone: zoneState };
 
 initInput({ start: tryStart, dash, cycleCamera: () => setCamMode(view.camMode + 1) });
 updateCamButton();
@@ -63,5 +72,6 @@ buildPlayers();
 buildInvader();
 buildStewards();
 buildBall();
+buildBroadcast();
 game.state = 'menu';
 showMenu();

@@ -4,6 +4,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 export const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -20,8 +21,13 @@ scene.fog = new THREE.Fog('#0a1424', 110, 260);
 
 export const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.05, 600);
 
+// Reflexos suaves (pele, chuteiras, tecido) a partir de um ambiente genérico
+const pmrem = new THREE.PMREMGenerator(renderer);
+scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.3;
+
 // Luzes de jogo noturno; o "sol" segue a câmara para as sombras ficarem nítidas
-scene.add(new THREE.HemisphereLight('#cfe0ff', '#24402a', 1.2));
+scene.add(new THREE.HemisphereLight('#cfe0ff', '#24402a', 1.0));
 export const sun = new THREE.DirectionalLight('#ffffff', 2.8);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
@@ -63,4 +69,14 @@ addEventListener('resize', () => {
 export function render(withFisheye) {
   if (withFisheye) composer.render();
   else renderer.render(scene, camera);
+}
+
+// Desenha outra cena num retângulo do ecrã (x, y a partir do canto inferior esquerdo, em px CSS)
+export function renderInset(insetScene, insetCamera, x, y, w, h) {
+  renderer.setScissorTest(true);
+  renderer.setScissor(x, y, w, h);
+  renderer.setViewport(x, y, w, h);
+  renderer.render(insetScene, insetCamera);
+  renderer.setScissorTest(false);
+  renderer.setViewport(0, 0, innerWidth, innerHeight);
 }

@@ -1,16 +1,19 @@
-// Regras do jogo: começar, pontuar (selfies, golos), aparecer seguranças e ser apanhado.
+// Regras do jogo: começar, pontuar (selfies, golos, dribles, TV), aparecer seguranças e ser apanhado.
 import { game, world, score } from '../state.js';
 import { STEWARDS, SCORE } from '../config.js';
 import { dist, storageSet } from '../utils.js';
-import { audio, ambience, beep, roar, whistle } from './audio.js';
+import { audio, ambience, beep, roar, whistle, ooh } from './audio.js';
 import { lockMouse, unlockMouse, pointer } from './input.js';
+import { moveZone } from './broadcast.js';
 import { resetInvader, updateInvader, startDash } from '../entities/invader.js';
 import { starRunAway } from '../entities/players.js';
 import { spawnSteward, clearStewards, updateStewards } from '../entities/stewards.js';
 import { resetBall, updateBall } from '../entities/ball.js';
-import { showHud, flash } from '../ui/hud.js';
+import { showHud, flash, toast } from '../ui/hud.js';
 import { hideOverlay, showGameOver } from '../ui/menus.js';
 import { float } from '../ui/floats.js';
+
+let firstGame = true;
 
 function reset() {
   resetInvader();
@@ -18,10 +21,11 @@ function reset() {
   resetBall();
   world.star.cool = 0;
   Object.assign(game, {
-    time: 0, selfies: 0, goals: 0, spawnT: 0, spawnCount: 0,
-    stamina: 100, dashT: 0, dashCd: 0, shake: 0,
+    time: 0, selfies: 0, goals: 0, dodges: 0, tvPoints: 0, live: false,
+    spawnT: 0, spawnCount: 0, stamina: 100, dashT: 0, dashCd: 0, shake: 0,
   });
   for (let i = 0; i < STEWARDS.startCount; i++) spawnSteward();
+  moveZone();
 }
 
 export function tryStart() {
@@ -33,11 +37,16 @@ export function tryStart() {
   showHud(true);
   lockMouse();
   roar(2);
+  if (firstGame) {
+    toast(`📺 Entra no círculo vermelho para apareceres no ecrã gigante (+${SCORE.tvPerSecond}/s)`);
+    firstGame = false;
+  }
 }
 
 function gameOver() {
   game.state = 'over';
   game.overAt = performance.now();
+  game.live = false;
   unlockMouse();
   pointer.active = false;
   whistle();
@@ -75,6 +84,13 @@ function onGoal() {
   spawnSteward();
 }
 
+function onDodge(n) {
+  game.dodges += n;
+  const inv = world.invader;
+  float(`DRIBLE! +${SCORE.dodge * n}`, inv.x, inv.z, '#8ecae6');
+  ooh();
+}
+
 export function updatePlay(dt) {
   game.time += dt;
   game.dashCd = Math.max(0, game.dashCd - dt);
@@ -86,5 +102,7 @@ export function updatePlay(dt) {
 
   game.spawnT += dt;
   if (game.spawnT > STEWARDS.spawnEvery) { game.spawnT = 0; spawnSteward(); }
-  if (updateStewards(dt, game.dashT > 0)) gameOver();
+  const { caught, dodged } = updateStewards(dt, game.dashT > 0);
+  if (caught) gameOver();
+  else if (dodged) onDodge(dodged);
 }
