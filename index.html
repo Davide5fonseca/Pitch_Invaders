@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Invasão de Campo 3D</title>
+</head>
+<body>
+<div id="vig" class="fx"></div>
+<div id="tired" class="fx"></div>
+<div id="hud" class="hidden">
+  <div class="stat"><b id="sScore">0</b><span>Pontos</span></div>
+  <div class="stat"><b id="sTime">0.0</b><span>Segundos</span></div>
+  <div class="stat"><b id="sSelfies">0</b><span>Selfies</span></div>
+  <div class="stat"><b id="sGoals">0</b><span>Golos</span></div>
+  <div class="stat"><b id="sStewards">0</b><span>Seguranças</span></div>
+  <div class="stat"><div class="bar"><i id="sStamina"></i></div><span>Fôlego</span></div>
+  <div class="stat"><div id="dash"></div><span>Finta</span></div>
+  <button id="camBtn" title="Mudar de câmara (C)">📷 TV</button>
+</div>
+<canvas id="map" class="hidden" width="226" height="152"></canvas>
+<div id="gopro" class="hidden"><span class="rec">● REC</span><span id="tc">00:00:00</span><span>🔋 87%</span></div>
+<div id="warn" class="hidden">⚠ ATRÁS DE TI!</div>
+<div id="toast"></div>
+<div id="overlay"><div class="card"><h1>INVASÃO DE CAMPO</h1><p>A carregar os jogadores…</p></div></div>
+<div id="flash"></div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Invasão de Campo</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0b1a10; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center; font-family: system-ui, sans-serif; }
+  canvas { display: block; touch-action: none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const W = 1000, H = 650;
+const P = { x: 70, y: 60, w: 860, h: 530 };          // relvado
+const CX = P.x + P.w / 2, CY = P.y + P.h / 2;
+const GOAL = 42;                                      // meia largura da baliza
+
+let scale = 1, dpr = 1;
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  scale = Math.min(innerWidth / W, innerHeight / H);
+  cv.style.width = W * scale + 'px';
+  cv.style.height = H * scale + 'px';
+  cv.width = W * scale * dpr;
+  cv.height = H * scale * dpr;
+}
+addEventListener('resize', resize);
+resize();
+
+// ---------- Bancadas (pré-desenhadas) ----------
+const crowd = document.createElement('canvas');
+crowd.width = W; crowd.height = H;
+(() => {
+  const c = crowd.getContext('2d');
+  c.fillStyle = '#262b36'; c.fillRect(0, 0, W, H);
+  const cols = ['#e63946', '#f1faee', '#a8dadc', '#457b9d', '#ffb703', '#fb8500', '#8ecae6', '#d62828', '#2a9d8f'];
+  for (let i = 0; i < 3000; i++) {
+    const x = Math.random() * W, y = Math.random() * H;
+    if (x > P.x - 16 && x < P.x + P.w + 16 && y > P.y - 16 && y < P.y + P.h + 16) continue;
+    c.fillStyle = cols[i % cols.length];
+    c.beginPath(); c.arc(x, y, 2.5 + Math.random() * 2, 0, 7); c.fill();
+  }
+})();
+
+// ---------- Som ----------
+let ac;
+function audio() {
+  if (!ac) try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+  return ac;
+}
+function beep(f, d, type = 'square', v = 0.06) {
+  const a = audio(); if (!a) return;
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.value = f;
+  g.gain.setValueAtTime(v, a.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + d);
+  o.connect(g).connect(a.destination);
+  o.start(); o.stop(a.currentTime + d);
+}
+function whistle() {
+  const a = audio(); if (!a) return;
+  const o = a.createOscillator(), lfo = a.createOscillator(), lg = a.createGain(), g = a.createGain();
+  o.frequency.value = 2900; lfo.frequency.value = 28; lg.gain.value = 180;
+  lfo.connect(lg).connect(o.frequency);
+  g.gain.setValueAtTime(0.07, a.currentTime);
+  g.gain.setValueAtTime(0.07, a.currentTime + 0.6);
+  g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + 0.8);
+  o.connect(g).connect(a.destination);
+  o.start(); lfo.start(); o.stop(a.currentTime + 0.8); lfo.stop(a.currentTime + 0.8);
+}
+function roar(len = 1.4) {
+  const a = audio(); if (!a) return;
+  const buf = a.createBuffer(1, a.sampleRate * len, a.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+  s.buffer = buf; f.type = 'lowpass'; f.frequency.value = 900;
+  g.gain.setValueAtTime(0.0001, a.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.25, a.currentTime + 0.15);
+  g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + len);
+  s.connect(f).connect(g).connect(a.destination);
+  s.start();
+}
+
+// ---------- Input ----------
+const keys = {};
+addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+  if (e.code === 'Space' || e.code === 'Enter') {
+    if (state !== 'play') tryStart();
+    else if (e.code === 'Space') dash();
+  }
+});
+addEventListener('keyup', e => { keys[e.code] = false; });
+
+const pointer = { active: false, x: 0, y: 0, lastTap: 0 };
+function toWorld(e) {
+  const r = cv.getBoundingClientRect();
+  return { x: (e.clientX - r.left) / scale, y: (e.clientY - r.top) / scale };
+}
+cv.addEventListener('pointerdown', e => {
+  audio();
+  if (state !== 'play') { tryStart(); return; }
+  const p = toWorld(e);
+  const now = performance.now();
+  if (now - pointer.lastTap < 280) dash();       // toque duplo = finta
+  pointer.lastTap = now;
+  Object.assign(pointer, p, { active: true });
+});
+cv.addEventListener('pointermove', e => { if (pointer.active) Object.assign(pointer, toWorld(e)); });
+addEventListener('pointerup', () => { pointer.active = false; });
+
+// ---------- Estado ----------
+let state = 'menu', overAt = 0;
+let player, star, ball, stewards, texts, time, selfies, goals, spawnT, spawnCount, stamina, dashT, dashCd, dashDir, shake;
+let best = 0;
+try { best = +localStorage.getItem('invasao-best') || 0; } catch (e) {}
+
+const score = () => Math.floor(time * 10) + selfies * 100 + goals * 300;
+
+function reset() {
+  player = { x: CX, y: P.y + P.h - 14, vx: 0, vy: 0, r: 11 };
+  star = { x: CX + 120, y: CY - 60, tx: CX, ty: CY, spd: 70, r: 11, cool: 0 };
+  ball = { x: CX, y: CY, vx: 0, vy: 0, r: 6 };
+  stewards = []; texts = [];
+  time = 0; selfies = 0; goals = 0; spawnT = 0; spawnCount = 0;
+  stamina = 100; dashT = 0; dashCd = 0; dashDir = { x: 0, y: -1 }; shake = 0;
+  spawnSteward(); spawnSteward();
+}
+
+function tryStart() {
+  if (state === 'over' && performance.now() - overAt < 700) return;
+  audio();
+  reset();
+  state = 'play';
+  roar(1.8);
+}
+
+function rand(a, b) { return a + Math.random() * (b - a); }
+function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+
+function spawnSteward() {
+  let pos;
+  for (let i = 0; i < 12; i++) {
+    const side = Math.floor(Math.random() * 4);
+    pos = side === 0 ? { x: rand(P.x, P.x + P.w), y: P.y - 35 }
+        : side === 1 ? { x: rand(P.x, P.x + P.w), y: P.y + P.h + 35 }
+        : side === 2 ? { x: P.x - 40, y: rand(P.y, P.y + P.h) }
+        :              { x: P.x + P.w + 40, y: rand(P.y, P.y + P.h) };
+    if (dist(pos, player) > 280) break;
+  }
+  spawnCount++;
+  const police = time > 25 && spawnCount % 3 === 0;
+  stewards.push({
+    ...pos, r: police ? 12 : 11, police,
+    base: police ? 160 : 112 + Math.random() * 18,
+    lead: police ? 0.15 : rand(0.2, 0.5),
+    wob: Math.random() * 10,
+  });
+}
+
+function float(text, x, y, color = '#fff', size = 22) {
+  texts.push({ text, x, y, color, size, t: 0 });
+}
+
+function dash() {
+  if (state !== 'play' || dashCd > 0) return;
+  const sp = Math.hypot(player.vx, player.vy);
+  dashDir = sp > 10 ? { x: player.vx / sp, y: player.vy / sp } : dashDir;
+  dashT = 0.16; dashCd = 1.3;
+  beep(520, 0.12, 'triangle', 0.08);
+}
+
+// ---------- Update ----------
+function update(dt) {
+  time += dt;
+  dashCd = Math.max(0, dashCd - dt);
+  shake = Math.max(0, shake - dt);
+
+  // Jogador
+  let ix = 0, iy = 0, far = false;
+  if (keys.ArrowLeft || keys.KeyA) ix--;
+  if (keys.ArrowRight || keys.KeyD) ix++;
+  if (keys.ArrowUp || keys.KeyW) iy--;
+  if (keys.ArrowDown || keys.KeyS) iy++;
+  if (pointer.active) {
+    const dx = pointer.x - player.x, dy = pointer.y - player.y, d = Math.hypot(dx, dy);
+    if (d > 8) { ix = dx / d; iy = dy / d; far = d > 140; }
+  }
+  const il = Math.hypot(ix, iy);
+  if (il > 0) { ix /= il; iy /= il; }
+
+  const wantSprint = (keys.ShiftLeft || keys.ShiftRight || far) && il > 0;
+  const sprinting = wantSprint && stamina > 0;
+  stamina = sprinting ? Math.max(0, stamina - 38 * dt) : Math.min(100, stamina + 18 * dt);
+
+  let tvx = ix * (sprinting ? 255 : 172), tvy = iy * (sprinting ? 255 : 172);
+  if (dashT > 0) { dashT -= dt; tvx = dashDir.x * 580; tvy = dashDir.y * 580; player.vx = tvx; player.vy = tvy; }
+  const k = Math.min(1, dt * 12);
+  player.vx += (tvx - player.vx) * k;
+  player.vy += (tvy - player.vy) * k;
+  player.x = Math.min(P.x + P.w + 8, Math.max(P.x - 8, player.x + player.vx * dt));
+  player.y = Math.min(P.y + P.h + 8, Math.max(P.y - 8, player.y + player.vy * dt));
+
+  // Craque (selfie)
+  star.cool = Math.max(0, star.cool - dt);
+  {
+    const dx = star.tx - star.x, dy = star.ty - star.y, d = Math.hypot(dx, dy);
+    if (d < 6) {
+      star.tx = rand(P.x + 40, P.x + P.w - 40); star.ty = rand(P.y + 40, P.y + P.h - 40); star.spd = 70;
+    } else { star.x += dx / d * star.spd * dt; star.y += dy / d * star.spd * dt; }
+  }
+  if (star.cool === 0 && dist(player, star) < player.r + star.r + 2) {
+    selfies++;
+    star.cool = 1.5;
+    // foge para longe do jogador
+    let best = null;
+    for (let i = 0; i < 8; i++) {
+      const c = { x: rand(P.x + 40, P.x + P.w - 40), y: rand(P.y + 40, P.y + P.h - 40) };
+      if (!best || dist(c, player) > dist(best, player)) best = c;
+    }
+    star.tx = best.x; star.ty = best.y; star.spd = 210;
+    float('+100 SELFIE! 📸', star.x, star.y - 20, '#ffd166');
+    beep(880, 0.08); setTimeout(() => beep(1320, 0.12), 80);
+    spawnSteward();
+  }
+
+  // Bola
+  {
+    const d = dist(player, ball);
+    if (d < player.r + ball.r) {
+      const nx = (ball.x - player.x) / (d || 1), ny = (ball.y - player.y) / (d || 1);
+      const pv = Math.hypot(player.vx, player.vy);
+      const kick = Math.max(220, pv * 1.7);
+      ball.vx = nx * kick; ball.vy = ny * kick;
+      ball.x = player.x + nx * (player.r + ball.r + 1);
+      ball.y = player.y + ny * (player.r + ball.r + 1);
+      beep(180, 0.05, 'sine', 0.1);
+    }
+    ball.x += ball.vx * dt; ball.y += ball.vy * dt;
+    const f = Math.pow(0.4, dt); ball.vx *= f; ball.vy *= f;
+    const inMouth = Math.abs(ball.y - CY) < GOAL;
+    if ((ball.x < P.x - 4 || ball.x > P.x + P.w + 4) && inMouth) {
+      goals++;
+      float('GOLOOOO! +300', CX, CY - 40, '#7cf29c', 44);
+      roar(2.2); shake = 0.5;
+      ball.x = CX; ball.y = CY; ball.vx = ball.vy = 0;
+      spawnSteward();
+    } else {
+      if (ball.x < P.x + ball.r && !inMouth) { ball.x = P.x + ball.r; ball.vx = Math.abs(ball.vx) * 0.7; }
+      if (ball.x > P.x + P.w - ball.r && !inMouth) { ball.x = P.x + P.w - ball.r; ball.vx = -Math.abs(ball.vx) * 0.7; }
+      if (ball.y < P.y + ball.r) { ball.y = P.y + ball.r; ball.vy = Math.abs(ball.vy) * 0.7; }
+      if (ball.y > P.y + P.h - ball.r) { ball.y = P.y + P.h - ball.r; ball.vy = -Math.abs(ball.vy) * 0.7; }
+    }
+  }
+
+  // Seguranças
+  spawnT += dt;
+  if (spawnT > 7 && stewards.length < 18) { spawnT = 0; spawnSteward(); }
+  for (const s of stewards) {
+    const spd = Math.min(s.base + time * 1.1, s.police ? 215 : 180);
+    let tx = player.x + player.vx * s.lead, ty = player.y + player.vy * s.lead;
+    let dx = tx - s.x, dy = ty - s.y, d = Math.hypot(dx, dy) || 1;
+    let mx = dx / d, my = dy / d;
+    // ligeiro ziguezague para não andarem em fila
+    s.wob += dt * 3;
+    mx += Math.cos(s.wob) * 0.15; my += Math.sin(s.wob) * 0.15;
+    // separação entre seguranças
+    for (const o of stewards) {
+      if (o === s) continue;
+      const ox = s.x - o.x, oy = s.y - o.y, od = Math.hypot(ox, oy);
+      if (od > 0 && od < 34) { mx += ox / od * 0.6; my += oy / od * 0.6; }
+    }
+    const ml = Math.hypot(mx, my) || 1;
+    s.x += mx / ml * spd * dt; s.y += my / ml * spd * dt;
+
+    if (dashT <= 0 && dist(s, player) < s.r + player.r - 2) {
+      state = 'over'; overAt = performance.now();
+      whistle(); shake = 0.4;
+      const sc = score();
+      if (sc > best) { best = sc; try { localStorage.setItem('invasao-best', best); } catch (e) {} }
+      return;
+    }
+  }
+
+  for (const t of texts) t.t += dt;
+  texts = texts.filter(t => t.t < 1.3);
+}
+
+// ---------- Desenho ----------
+function drawPitch() {
+  for (let i = 0; i < 10; i++) {
+    ctx.fillStyle = i % 2 ? '#2e8b3e' : '#349a46';
+    ctx.fillRect(P.x + i * P.w / 10, P.y, P.w / 10, P.h);
+  }
+  ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 3;
+  ctx.strokeRect(P.x, P.y, P.w, P.h);
+  ctx.beginPath(); ctx.moveTo(CX, P.y); ctx.lineTo(CX, P.y + P.h); ctx.stroke();
+  ctx.beginPath(); ctx.arc(CX, CY, 70, 0, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(CX, CY, 4, 0, 7); ctx.fill();
+  for (const left of [true, false]) {
+    const x = left ? P.x : P.x + P.w, dir = left ? 1 : -1;
+    ctx.strokeRect(left ? x : x - 140, CY - 150, 140, 300);
+    ctx.strokeRect(left ? x : x - 50, CY - 70, 50, 140);
+    ctx.beginPath(); ctx.arc(x + dir * 100, CY, 3, 0, 7); ctx.fill();
+    // baliza
+    ctx.fillStyle = 'rgba(255,255,255,.25)';
+    ctx.fillRect(left ? x - 16 : x, CY - GOAL, 16, GOAL * 2);
+    ctx.strokeRect(left ? x - 16 : x, CY - GOAL, 16, GOAL * 2);
+    ctx.fillStyle = '#fff';
+  }
+}
+
+function person(x, y, r, shirt, outline = '#111') {
+  ctx.fillStyle = 'rgba(0,0,0,.3)';
+  ctx.beginPath(); ctx.ellipse(x + 3, y + 4, r, r * 0.8, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = shirt; ctx.strokeStyle = outline; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = '#f2c79b';
+  ctx.beginPath(); ctx.arc(x, y, r * 0.45, 0, 7); ctx.fill();
+}
+
+function drawText(t, x, y, size, color = '#fff', align = 'center', weight = 800) {
+  ctx.font = `${weight} ${size}px system-ui, sans-serif`;
+  ctx.textAlign = align; ctx.textBaseline = 'middle';
+  ctx.lineWidth = Math.max(3, size / 6); ctx.strokeStyle = 'rgba(0,0,0,.7)';
+  ctx.strokeText(t, x, y);
+  ctx.fillStyle = color; ctx.fillText(t, x, y);
+}
+
+function draw() {
+  ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+  if (shake > 0) ctx.translate(rand(-6, 6) * shake, rand(-6, 6) * shake);
+  ctx.drawImage(crowd, 0, 0);
+  drawPitch();
+
+  if (state === 'menu') { drawMenu(); return; }
+
+  // bola
+  ctx.fillStyle = 'rgba(0,0,0,.3)';
+  ctx.beginPath(); ctx.arc(ball.x + 2, ball.y + 3, ball.r, 0, 7); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.strokeStyle = '#222'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, 7); ctx.fill(); ctx.stroke();
+
+  // craque
+  const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 180);
+  if (star.cool === 0) {
+    ctx.strokeStyle = `rgba(255,209,102,${0.4 + pulse * 0.6})`; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(star.x, star.y, star.r + 7 + pulse * 3, 0, 7); ctx.stroke();
+  }
+  person(star.x, star.y, star.r, '#ffffff', '#c9a227');
+  drawText('10', star.x, star.y - 20, 11, '#ffd166');
+
+  // seguranças
+  for (const s of stewards) person(s.x, s.y, s.r, s.police ? '#1d4ed8' : '#ffb000', '#222');
+
+  // jogador
+  if (dashT > 0) {
+    ctx.fillStyle = 'rgba(255,80,80,.3)';
+    ctx.beginPath(); ctx.arc(player.x - dashDir.x * 14, player.y - dashDir.y * 14, player.r, 0, 7); ctx.fill();
+  }
+  person(player.x, player.y, player.r, '#e63946', '#fff');
+
+  for (const t of texts) {
+    ctx.globalAlpha = Math.max(0, 1 - t.t / 1.3);
+    drawText(t.text, t.x, t.y - t.t * 40, t.size, t.color);
+    ctx.globalAlpha = 1;
+  }
+
+  drawHud();
+  if (state === 'over') drawOver();
+}
+
+function drawHud() {
+  ctx.fillStyle = 'rgba(0,0,0,.55)';
+  ctx.fillRect(10, 8, 980, 42);
+  drawText(`Pontos ${score()}`, 24, 29, 20, '#fff', 'left');
+  drawText(`⏱ ${time.toFixed(1)}s`, 210, 29, 18, '#ddd', 'left', 600);
+  drawText(`📸 ${selfies}`, 330, 29, 18, '#ffd166', 'left', 600);
+  drawText(`⚽ ${goals}`, 410, 29, 18, '#7cf29c', 'left', 600);
+  drawText(`Seguranças ${stewards.length}`, 490, 29, 18, '#ffb000', 'left', 600);
+
+  // fôlego
+  drawText('Fôlego', 690, 29, 14, '#ccc', 'left', 600);
+  ctx.fillStyle = '#333'; ctx.fillRect(745, 22, 120, 14);
+  ctx.fillStyle = stamina > 30 ? '#4ade80' : '#f87171';
+  ctx.fillRect(745, 22, 120 * stamina / 100, 14);
+  // finta
+  ctx.fillStyle = dashCd > 0 ? '#555' : '#e63946';
+  ctx.beginPath(); ctx.arc(900, 29, 13, 0, 7); ctx.fill();
+  if (dashCd > 0) {
+    ctx.strokeStyle = '#e63946'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(900, 29, 13, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * (1 - dashCd / 1.3)); ctx.stroke();
+  }
+  drawText('Finta', 940, 29, 14, '#ccc', 'center', 600);
+}
+
+function panel() {
+  ctx.fillStyle = 'rgba(0,0,0,.6)';
+  ctx.fillRect(0, 0, W, H);
+}
+
+function drawMenu() {
+  panel();
+  drawText('INVASÃO DE CAMPO', CX, 150, 64, '#ffd166');
+  drawText('Salta para o relvado e foge aos seguranças o máximo de tempo possível!', CX, 215, 20, '#fff', 'center', 500);
+  const lines = [
+    ['📸', 'Toca no craque (nº 10) para tirar uma selfie', '+100'],
+    ['⚽', 'Chuta a bola para a baliza', '+300'],
+    ['⏱', 'Cada segundo em campo', '+10'],
+  ];
+  lines.forEach(([i, t, p], n) => {
+    drawText(i, 250, 280 + n * 38, 22, '#fff', 'left', 500);
+    drawText(t, 290, 280 + n * 38, 20, '#fff', 'left', 500);
+    drawText(p, 760, 280 + n * 38, 20, '#7cf29c', 'right', 800);
+  });
+  drawText('WASD / Setas: mover   •   Shift: correr   •   Espaço: finta (invencível)', CX, 420, 17, '#ccc', 'center', 500);
+  drawText('Telemóvel: arrasta o dedo para mover, toque duplo para a finta', CX, 448, 15, '#aaa', 'center', 500);
+  const pulse = 0.6 + 0.4 * Math.sin(performance.now() / 250);
+  ctx.globalAlpha = pulse;
+  drawText('Prime ESPAÇO ou toca para começar', CX, 520, 28, '#fff');
+  ctx.globalAlpha = 1;
+  if (best) drawText(`Recorde: ${best}`, CX, 570, 18, '#ffd166', 'center', 600);
+}
+
+function drawOver() {
+  panel();
+  drawText('APANHADO! 🚨', CX, 190, 64, '#f87171');
+  drawText(`${score()} pontos`, CX, 270, 40, '#fff');
+  drawText(`${time.toFixed(1)}s em campo  •  ${selfies} selfies  •  ${goals} golos`, CX, 320, 20, '#ddd', 'center', 500);
+  drawText(score() >= best ? '🏆 Novo recorde!' : `Recorde: ${best}`, CX, 365, 22, '#ffd166', 'center', 700);
+  if (performance.now() - overAt > 700) {
+    drawText('ESPAÇO ou toque para tentar outra vez', CX, 450, 24, '#fff');
+  }
+}
+
+// ---------- Loop ----------
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  if (state === 'play') update(dt);
+  else shake = Math.max(0, shake - dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

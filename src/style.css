@@ -1,0 +1,61 @@
+:root { --gold: #ffd166; --pink: #c14bff; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #0a1424; color: #fff;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif; user-select: none; -webkit-user-select: none; }
+canvas { display: block; touch-action: none; }
+.hidden { display: none !important; }
+
+/* HUD */
+#hud { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); display: flex; gap: 18px; align-items: center;
+  padding: 8px 18px; background: rgba(5,10,20,.65); border: 1px solid rgba(255,255,255,.12); border-radius: 14px;
+  backdrop-filter: blur(6px); white-space: nowrap; }
+.stat { display: flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.stat b { font-size: 20px; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 11px; opacity: .7; text-transform: uppercase; letter-spacing: .06em; }
+.bar { width: 90px; height: 8px; background: #333; border-radius: 4px; overflow: hidden; margin: 6px 0 4px; }
+.bar i { display: block; height: 100%; width: 100%; background: #4ade80; }
+#dash { width: 24px; height: 24px; border-radius: 50%; background: var(--pink); }
+#camBtn { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.25); color: #fff; border-radius: 10px;
+  padding: 7px 12px; font: 700 14px system-ui, sans-serif; cursor: pointer; }
+#camBtn:hover { background: rgba(255,255,255,.2); }
+#map { position: fixed; right: 14px; bottom: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,.2); background: rgba(0,0,0,.45); }
+
+/* Menus */
+#overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center;
+  padding: 16px; box-sizing: border-box; cursor: pointer;
+  background: radial-gradient(ellipse at center, rgba(5,10,20,.45), rgba(5,10,20,.85)); }
+.card { max-width: 640px; }
+h1 { font-size: clamp(36px, 7vw, 72px); margin: 0 0 8px; color: var(--gold); text-shadow: 0 4px 20px rgba(0,0,0,.6); }
+h1.red { color: #f87171; }
+.card p { margin: 6px 0; font-size: 17px; opacity: .9; }
+.big { font-size: 40px !important; font-weight: 900; opacity: 1 !important; }
+.rules { display: grid; grid-template-columns: auto 1fr auto; gap: 8px 14px; text-align: left; margin: 20px auto; max-width: 520px; font-size: 16px; }
+.rules em { color: #7cf29c; font-style: normal; font-weight: 800; text-align: right; }
+.keys { font-size: 14px !important; opacity: .7 !important; }
+.cta { margin-top: 22px; font-size: 24px; font-weight: 800; animation: pulse 1.2s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .45; } }
+
+/* Efeitos */
+#flash { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+.float { position: fixed; left: 0; top: 0; font-weight: 900; font-size: 24px; pointer-events: none; white-space: nowrap;
+  text-shadow: 0 2px 6px #000, 0 0 2px #000; }
+.float.huge { font-size: 56px; }
+.fx { position: fixed; inset: 0; pointer-events: none; opacity: 0; transition: opacity .3s; }
+#vig { background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.85) 100%); }
+#tired { background: radial-gradient(ellipse at center, transparent 45%, rgba(150,0,0,.85) 100%); transition: none; }
+#gopro { position: fixed; top: 16px; left: 16px; display: flex; gap: 14px; font: 700 15px ui-monospace, Consolas, monospace;
+  text-shadow: 0 1px 3px #000; pointer-events: none; }
+#gopro .rec { color: #ff3b30; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+#warn { position: fixed; top: 84px; left: 50%; transform: translateX(-50%); color: #ff5252; font-size: 24px; font-weight: 900;
+  text-shadow: 0 2px 8px #000; pointer-events: none; animation: pulse .5s ease-in-out infinite; }
+#toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 32px); box-sizing: border-box;
+  padding: 10px 16px; border-radius: 12px; background: rgba(5,10,20,.85); border: 1px solid rgba(255,255,255,.15);
+  font-size: 15px; text-align: center; opacity: 0; transition: opacity .3s; pointer-events: none; }
+#toast.show { opacity: 1; }
+
+@media (max-width: 700px) {
+  #hud { gap: 10px; padding: 6px 10px; top: 6px; }
+  .stat b { font-size: 15px; } .stat span { font-size: 9px; }
+  .bar { width: 50px; }
+  #map { width: 150px; height: auto; }
+}
