@@ -229,3 +229,16 @@ body.touch #gopro { top: calc(64px + var(--safe-t)); }
   background: rgba(10,14,28,.78); border: 1px solid rgba(255,209,102,.6); color: var(--gold); font-size: 13px; letter-spacing: .06em;
   pointer-events: none; white-space: nowrap; box-shadow: 0 0 18px rgba(255,209,102,.45); }
 #ronArrow .ar { display: inline-block; font-size: 18px; line-height: 1; }
+
+/* Legenda do mini-mapa (no menu) — as mesmas cores e formas do mapa */
+.map-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; font-size: 13px; color: var(--muted); margin-top: 12px; }
+.map-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.map-legend i { display: inline-block; flex: 0 0 auto; }
+.lg-dot { width: 9px; height: 9px; border-radius: 50%; }
+.lg-dot.pt { background: #e8283c; box-shadow: 0 0 0 1px #fff; }
+.lg-dot.es { background: #f4f4f4; box-shadow: 0 0 0 1px #1d1d1d; }
+.lg-dot.me { width: 11px; height: 11px; background: #c14bff; box-shadow: 0 0 0 2px #fff; }
+.lg-dia { width: 8px; height: 8px; transform: rotate(45deg); box-shadow: 0 0 0 1px #000; }
+.lg-dia.st { background: #d4f70f; } .lg-dia.po { background: #5b8cff; }
+.lg-star { width: 13px; height: 13px; background: #ffb000;
+  clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }

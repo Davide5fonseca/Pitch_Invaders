@@ -1,4 +1,4 @@
-// Portugal e Brasil (4-4-2), o Ronaldo (o craque que o invasor quer apanhar) e o árbitro.
+// Portugal e Espanha (4-4-2), o Ronaldo (o craque que o invasor quer apanhar) e o árbitro.
 import { world } from '../state.js';
 import { HL, HW } from '../config.js';
 import { rand, clamp } from '../utils.js';
@@ -12,14 +12,14 @@ const STAR_INDEX = 10;                 // o Ronaldo: avançado de Portugal, nº 
 const RONALDO_LOOK = { skin: '#d9a07a', hair: '#15100c', height: 1.04 };
 
 export function buildPlayers() {
-  const teams = [[1, KITS.portugal, KITS.portugalGk], [-1, KITS.brazil, KITS.brazilGk]];
-  for (const [side, kit, gkKit] of teams) {
+  const teams = [[1, 'pt', KITS.portugal, KITS.portugalGk], [-1, 'es', KITS.spain, KITS.spainGk]];
+  for (const [side, team, kit, gkKit] of teams) {
     FORMATION.forEach(([x, z], i) => {
       const ronaldo = side === 1 && i === STAR_INDEX;
       const e = makeEntity(i === 0 ? gkKit : kit, x * side, z * side, ronaldo
         ? { print: '7', printName: 'RONALDO', look: RONALDO_LOOK }
         : { print: String(NUMBERS[i]) });
-      Object.assign(e, { homeX: e.x, homeZ: e.z, tx: e.x, tz: e.z, wait: rand(0, 3), spd: 1.3, heading: side * Math.PI / 2 });
+      Object.assign(e, { team, homeX: e.x, homeZ: e.z, tx: e.x, tz: e.z, wait: rand(0, 3), spd: 1.3, heading: side * Math.PI / 2 });
       world.npcs.push(e);
     });
   }

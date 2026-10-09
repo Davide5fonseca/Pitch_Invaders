@@ -53,7 +53,7 @@ export function pitchTexture() {
 export function crowdCanvas() {
   const [c, g] = canvas(512, 256);
   g.fillStyle = '#151820'; g.fillRect(0, 0, 512, 256);
-  const shirts = ['#c8102e', '#c8102e', '#c8102e', '#046a38', '#ffd400', '#ffd400', '#ffd400', '#009c3b', '#002776', '#f4f4f4', '#222'];
+  const shirts = ['#c8102e', '#c8102e', '#c8102e', '#046a38', '#c60b1e', '#c60b1e', '#ffc400', '#ffc400', '#f4f4f4', '#0f2350', '#222'];
   const skins = ['#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#ffdbac'];
   for (let row = 0, y = 8; y < 256; y += 12, row++) {
     for (let x = 4 + (row % 2) * 5; x < 512; x += 10) {

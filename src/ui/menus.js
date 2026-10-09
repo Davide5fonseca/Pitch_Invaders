@@ -107,7 +107,7 @@ export function showMenu() {
     <section class="menu-main">
       <div class="kicker">⚽ Jogo 3D · grátis no browser</div>
       <h1 class="logo"><span>Pitch</span><span>Invaders</span></h1>
-      <p class="tagline">Salta para o relvado no Portugal–Brasil e corre até ao Ronaldo para a selfie da tua vida, antes que os seguranças te apanhem.</p>
+      <p class="tagline">Salta para o relvado no Portugal–Espanha e corre até ao Ronaldo para a selfie da tua vida, antes que os seguranças te apanhem.</p>
       <div class="actions">
         <button class="btn-play" data-act="play">▶ Jogar</button>
         <button class="btn-icon" data-act="sound" aria-label="Som"></button>
@@ -124,6 +124,11 @@ export function showMenu() {
         <div class="sc"><i>⏱</i><div><b>+${SCORE.perSecond}/s</b><span>Em campo</span></div></div>
       </div>
       ${controlsHelp()}
+      <div class="map-legend" aria-label="Legenda do mini-mapa">
+        <span>Mini-mapa:</span>
+        <span><i class="lg-star"></i>Ronaldo</span><span><i class="lg-dot pt"></i>Portugal</span><span><i class="lg-dot es"></i>Espanha</span>
+        <span><i class="lg-dia st"></i>Seguranças</span><span><i class="lg-dia po"></i>Polícia</span><span><i class="lg-dot me"></i>Tu</span>
+      </div>
       ${world.xbot ? '' : '<p class="controls">(Modelo 3D indisponível — a usar bonecos simplificados)</p>'}
     </section>
     <aside class="menu-side"><div class="board" id="lbMenu"></div></aside>

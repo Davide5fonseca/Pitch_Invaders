@@ -16,11 +16,12 @@ const HAIRS = ['#15100c', '#2b1d14', '#4a3020', '#6b4a2b', '#a8793f', '#d9b56c',
 const pick = a => a[Math.floor(Math.random() * a.length)];
 
 export const KITS = {
-  // Portugal: vermelho com verde, números dourados · Brasil: amarelo com verde, calções azuis
+  // Portugal: equipamento principal (vermelho e verde, números dourados).
+  // Espanha: equipamento alternativo (branco com vermelho e amarelo), porque também joga de vermelho em casa.
   portugal:   { shirt: '#c8102e', sleeve: '#c8102e', trim: '#046a38', shorts: '#046a38', socks: '#c8102e', boots: '#111111', print: '#f6c445' },
-  brazil:     { shirt: '#ffd400', sleeve: '#ffd400', trim: '#009c3b', shorts: '#002776', socks: '#f4f4f4', boots: '#f4f4f4', print: '#009c3b' },
+  spain:      { shirt: '#f4f4f4', sleeve: '#f4f4f4', trim: '#c60b1e', shorts: '#0f2350', socks: '#f4f4f4', boots: '#ffc400', print: '#c60b1e' },
   portugalGk: { shirt: '#00a3a3', sleeve: '#00a3a3', trim: '#063b3b', shorts: '#063b3b', socks: '#00a3a3', boots: '#111111', gloves: '#f2f2f2', longSleeves: true, print: '#ffffff' },
-  brazilGk:   { shirt: '#1d1d1d', sleeve: '#1d1d1d', trim: '#009c3b', shorts: '#1d1d1d', socks: '#1d1d1d', boots: '#ffd400', gloves: '#ffd400', longSleeves: true, print: '#ffd400' },
+  spainGk:    { shirt: '#ff7a00', sleeve: '#ff7a00', trim: '#1d1d1d', shorts: '#1d1d1d', socks: '#ff7a00', boots: '#1d1d1d', gloves: '#1d1d1d', longSleeves: true, print: '#1d1d1d' },
   ref:     { shirt: '#141414', sleeve: '#141414', trim: '#ffd400', shorts: '#141414', socks: '#141414', boots: '#111111', print: '#ffd400' },
   steward: { shirt: '#d4f70f', sleeve: '#24262b', trim: '#c9d1d9', shorts: '#24262b', socks: '#24262b', boots: '#0d0d0d', longSleeves: true, trousers: true, print: '#111111', back: 'SEGURANÇA' },
   police:  { shirt: '#1f2a44', sleeve: '#1f2a44', trim: '#d9e021', shorts: '#182033', socks: '#182033', boots: '#0d0d0d', longSleeves: true, trousers: true, print: '#ffffff', back: 'POLÍCIA' },
