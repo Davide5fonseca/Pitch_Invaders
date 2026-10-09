@@ -216,3 +216,10 @@ body.touch #gopro { top: calc(64px + var(--safe-t)); }
   .board { padding: 12px 14px; } .board h3 { font-size: 20px; margin-bottom: 6px; }
   .board li { padding: 5px 4px; font-size: 14px; }
 }
+
+/* Separadores da classificação (Hoje / Semana / Sempre) */
+.tabs { display: flex; gap: 4px; padding: 4px; margin: 0 0 10px; border-radius: 12px; background: rgba(255,255,255,.06); }
+.tabs button { flex: 1; border: 0; background: none; color: var(--muted); padding: 8px 6px; border-radius: 9px;
+  font-weight: 800; font-size: 13px; letter-spacing: .02em; cursor: pointer; }
+.tabs button:hover { color: #fff; }
+.tabs button[aria-selected="true"] { background: var(--gold); color: #1a1200; }

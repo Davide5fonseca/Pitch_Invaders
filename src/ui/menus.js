@@ -24,23 +24,52 @@ overlay().addEventListener('click', e => {
   else if (act.dataset.act === 'cam') handlers.setCamera(+act.dataset.cam);
   else if (act.dataset.act === 'share') share(act);
   else if (act.dataset.act === 'sound') { handlers.toggleSound(); act.blur(); }
+  else if (act.dataset.act === 'period') { boards[act.dataset.board].period = act.dataset.period; renderBoard(act.dataset.board); }
 });
 
-function board(scores, { highlight, count, title }) {
+// ───────── Tabela de classificação: Hoje / Semana / Sempre ─────────
+const PERIODS = [['day', 'Hoje'], ['week', 'Semana'], ['all', 'Sempre']];
+const EMPTY = {
+  day: 'Ainda ninguém jogou hoje. Sê o primeiro!',
+  week: 'Ainda não há resultados esta semana.',
+  all: 'Ainda não há recordes. Sê o primeiro!',
+};
+// Mesmo critério do servidor: "Ângela" e "angela" são o mesmo jogador
+const keyOf = n => String(n || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/\s+/g, ' ').trim();
+const boards = {};      // id do elemento → { data, period, me }
+
+// Aceita a resposta nova ({ day, week, all }) e a antiga ({ scores })
+const normalize = d => (d && (d.all || d.scores)) ? { day: d.day || [], week: d.week || [], all: d.all || d.scores } : null;
+
+// Abre no separador mais animado: hoje se já houver jogo, senão a semana, senão sempre
+function pickPeriod(data) {
+  if (!data) return 'all';
+  if (data.day.length >= 3) return 'day';
+  if (data.week.length >= 3) return 'week';
+  return 'all';
+}
+
+function renderBoard(id) {
+  const el = $(id), st = boards[id];
+  if (!el || !st) return;
+  const tabs = `<div class="tabs" role="tablist">${PERIODS.map(([p, label]) =>
+    `<button role="tab" data-act="period" data-board="${id}" data-period="${p}" aria-selected="${p === st.period}">${label}</button>`).join('')}</div>`;
   let body;
-  if (scores === undefined) body = '<div class="skeleton"></div>'.repeat(5);
-  else if (!scores) body = '<p class="empty">Tabela online indisponível de momento.</p>';
-  else if (!scores.length) body = '<p class="empty">Ainda não há recordes. Sê o primeiro!</p>';
+  if (st.data === undefined) body = '<div class="skeleton"></div>'.repeat(5);
+  else if (st.data === null) body = '<p class="empty">Tabela online indisponível de momento.</p>';
   else {
-    const me = myName().toLowerCase();
-    body = `<ol>${scores.slice(0, count).map((s, i) => {
-      const mine = highlight ? i + 1 === highlight : !!me && s.name.toLowerCase() === me;
-      return `<li class="${mine ? 'me' : ''}"><span class="r ${i < 3 ? 'medal' : ''}">${MEDALS[i] || i + 1}</span>
-        <span class="n">${esc(s.name)}</span><span class="s">${s.score}</span></li>`;
-    }).join('')}</ol>`;
+    const list = st.data[st.period] || [];
+    body = !list.length ? `<p class="empty">${EMPTY[st.period]}</p>` : `<ol>${list.slice(0, 10).map((e, i) => `
+      <li class="${st.me && keyOf(e.name) === st.me ? 'me' : ''}"><span class="r ${i < 3 ? 'medal' : ''}">${MEDALS[i] || i + 1}</span>
+        <span class="n">${esc(e.name)}</span><span class="s">${e.score}</span></li>`).join('')}</ol>`;
   }
   const pb = game.best ? `<div class="pb"><span>O teu recorde</span><b>${game.best}</b></div>` : '';
-  return `<h3>🏆 ${title}</h3>${body}${pb}`;
+  el.innerHTML = `<h3>🏆 Classificação</h3>${tabs}${body}${pb}`;
+}
+
+function setBoard(id, data, opts = {}) {
+  boards[id] = { data, me: keyOf(myName()), ...opts };
+  renderBoard(id);
 }
 
 function cameraChips() {
@@ -97,13 +126,15 @@ export function showMenu() {
       ${controlsHelp()}
       ${world.xbot ? '' : '<p class="controls">(Modelo 3D indisponível — a usar bonecos simplificados)</p>'}
     </section>
-    <aside class="menu-side"><div class="board" id="lbMenu">${board(undefined, { title: 'Melhores de sempre' })}</div></aside>
+    <aside class="menu-side"><div class="board" id="lbMenu"></div></aside>
   </div>`;
   o.classList.remove('hidden');
   updateSoundButtons();
+  setBoard('lbMenu', undefined, { period: 'all' });
   fetchScores().then(d => {
-    const el = $('lbMenu');
-    if (el && game.state === 'menu') el.innerHTML = board(d?.scores ?? null, { count: 10, title: 'Melhores de sempre' });
+    if (game.state !== 'menu') return;
+    const data = normalize(d);
+    setBoard('lbMenu', data, { period: pickPeriod(data) });
   });
 }
 
@@ -156,13 +187,19 @@ export function showGameOver(points, record) {
       </div>
       <p class="hint desktop-only">ou prime <kbd>Espaço</kbd> para jogar outra vez</p>
     </section>
-    <aside class="menu-side"><div class="board" id="lbTable">${board(undefined, { title: 'Top 10' })}</div></aside>
+    <aside class="menu-side"><div class="board" id="lbTable"></div></aside>
   </div>`;
   o.classList.remove('hidden');
   updateSoundButtons();
   countUp($('finalScore'), points);
 
-  fetchScores().then(d => { const t = $('lbTable'); if (t && !t.dataset.final) t.innerHTML = board(d?.scores ?? null, { count: 10, title: 'Top 10' }); });
+  setBoard('lbTable', undefined, { period: 'day' });
+  let saved = false;
+  fetchScores().then(d => {
+    if (saved || !$('lbTable')) return;
+    const data = normalize(d);
+    setBoard('lbTable', data, { period: pickPeriod(data) });
+  });
 
   const form = $('lbForm');
   if (!form) return;
@@ -184,9 +221,15 @@ export function showGameOver(points, record) {
       return;
     }
     form.remove();
-    $('lbMsg').textContent = res.rank ? `Ficaste em ${res.rank}º lugar! 🎉` : 'Guardado! Ainda não chega ao top 100.';
-    const t = $('lbTable');
-    t.dataset.final = '1';
-    t.innerHTML = board(res.scores, { count: 10, title: 'Top 10', highlight: res.rank });
+    saved = true;
+    // Mostra a posição em cada tabela e abre aquela onde ficaste mais bem classificado
+    const r = res.ranks || { all: res.rank };
+    const parts = PERIODS.filter(([p]) => r[p]).map(([p, label]) => `${label}: ${r[p]}º`);
+    const bestP = ['all', 'week', 'day'].filter(p => r[p]).sort((x, y) => r[x] - r[y])[0];
+    const podium = Object.values(r).some(x => x && x <= 3);
+    $('lbMsg').textContent = parts.length
+      ? parts.join(' · ') + (podium ? ' 🎉' : '') + (res.improved === false ? ' · o teu melhor de sempre continua acima' : '')
+      : 'Guardado!';
+    setBoard('lbTable', normalize(res), { me: keyOf(name), period: bestP || 'day' });
   });
 }
