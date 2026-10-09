@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Estatísticas · Pitch Invaders</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7; --surface: #fcfcfb; --text: #0b0b0b; --text-2: #52514e; --muted: #898781;
+    --grid: #e1e0d9; --axis: #c3c2b7; --ring: rgba(11,11,11,.10);
+    --series-1: #2a78d6; --series-2: #eb6834; --accent: #c14bff; --danger: #d03b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #0d0d0d; --surface: #1a1a19; --text: #ffffff; --text-2: #c3c2b7; --muted: #898781;
+      --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,.10);
+      --series-1: #3987e5; --series-2: #d95926;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --text: #ffffff; --text-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --ring: rgba(255,255,255,.10);
+    --series-1: #3987e5; --series-2: #d95926;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 1100px; margin: 0 auto; padding: 28px 16px 60px; }
+  header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+  header img { width: 44px; height: 44px; border-radius: 10px; }
+  h1 { font-size: 24px; margin: 0; letter-spacing: -.01em; }
+  header p { margin: 2px 0 0; color: var(--text-2); font-size: 14px; }
+  h2 { font-size: 15px; margin: 0 0 2px; }
+  .sub { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+  .card { background: var(--surface); border: 1px solid var(--ring); border-radius: 14px; padding: 18px; }
+
+  /* Filtro (uma linha, por cima de tudo) */
+  .filters { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+  .seg { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--surface); border: 1px solid var(--ring); }
+  .seg button { border: 0; background: none; color: var(--text-2); padding: 7px 14px; border-radius: 8px; font: inherit; font-weight: 600; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--text); color: var(--surface); }
+  .ghost { border: 1px solid var(--ring); background: var(--surface); color: var(--text-2); padding: 8px 12px; border-radius: 10px; font: inherit; cursor: pointer; }
+  .updated { color: var(--muted); font-size: 13px; margin-left: auto; }
+
+  /* Cartões de números */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 12px; }
+  .tile { background: var(--surface); border: 1px solid var(--ring); border-radius: 14px; padding: 14px 16px; }
+  .tile .label { color: var(--text-2); font-size: 13px; }
+  .tile .value { font-size: 30px; font-weight: 700; letter-spacing: -.02em; margin-top: 2px; }
+  .tile .note { color: var(--muted); font-size: 12px; }
+  .section-label { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 22px 0 10px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
+  .chart { position: relative; }
+  .chart svg { display: block; width: 100%; overflow: visible; }
+  .legend { display: flex; gap: 16px; font-size: 13px; color: var(--text-2); margin-bottom: 8px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { display: inline-block; width: 14px; height: 2px; border-radius: 1px; }
+  .legend i.rect { width: 10px; height: 10px; border-radius: 2px; }
+  .tick { fill: var(--muted); font-size: 11px; }
+  .hit { fill: transparent; cursor: default; outline: none; }
+  .hit:focus-visible { stroke: var(--text); stroke-width: 1; }
+  .tip { position: absolute; pointer-events: none; z-index: 5; background: var(--surface); border: 1px solid var(--ring);
+    box-shadow: 0 6px 20px rgba(0,0,0,.18); border-radius: 10px; padding: 8px 10px; font-size: 13px; min-width: 130px; display: none; }
+  .tip .t { color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+  .tip .row { display: flex; align-items: center; gap: 8px; }
+  .tip .row b { font-size: 14px; }
+  .tip .row i { width: 12px; height: 2px; border-radius: 1px; display: inline-block; }
+  .tip .row span { color: var(--text-2); }
+  .hbar-row { display: grid; grid-template-columns: 110px 1fr 46px; align-items: center; gap: 10px; margin: 8px 0; font-size: 14px; }
+  .hbar-row .track { height: 14px; }
+  .hbar-row .fill { height: 100%; border-radius: 0 4px 4px 0; background: var(--series-1); min-width: 2px; }
+  .hbar-row .v { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .split { display: flex; height: 22px; gap: 2px; margin: 10px 0 8px; }
+  .split div { border-radius: 4px; min-width: 2px; }
+  .split-labels { display: flex; justify-content: space-between; font-size: 14px; color: var(--text-2); }
+  .split-labels b { color: var(--text); }
+  details { margin-top: 12px; }
+  summary { cursor: pointer; color: var(--text-2); font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--text-2); font-weight: 600; }
+  .scroll { overflow-x: auto; }
+
+  /* Pedido da chave / avisos */
+  .gate { max-width: 440px; margin: 60px auto; }
+  .gate input { width: 100%; padding: 11px 12px; border-radius: 10px; border: 1px solid var(--axis); background: var(--page); color: var(--text); font: inherit; margin: 10px 0; }
+  .gate button { padding: 10px 16px; border-radius: 10px; border: 0; background: var(--text); color: var(--surface); font: inherit; font-weight: 700; cursor: pointer; }
+  .err { color: var(--danger); font-size: 14px; min-height: 20px; }
+  ol.steps { padding-left: 20px; color: var(--text-2); }
+  code { background: var(--page); border: 1px solid var(--ring); border-radius: 6px; padding: 1px 6px; font-size: 13px; }
+  .loading { opacity: .5; transition: opacity .2s; }
+  .empty { color: var(--muted); padding: 30px 0; text-align: center; }
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+(() => {
+  const app = document.getElementById('app');
+  const nf = new Intl.NumberFormat('pt-PT');
+  const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+                  set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+  const state = { days: 30, key: new URLSearchParams(location.search).get('key') || store.get('pi-stats-key') || '', data: null };
+  if (new URLSearchParams(location.search).get('key')) { store.set('pi-stats-key', state.key); history.replaceState(null, '', location.pathname); }
+
+  // ───────── Formatação ─────────
+  const dayShort = d => `${d.slice(8, 10)}/${d.slice(5, 7)}`;
+  const dayLong = d => new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(d + 'T12:00:00Z'));
+  const secs = s => s >= 60 ? `${Math.floor(s / 60)} min ${Math.round(s % 60)} s` : `${Math.round(s)} s`;
+  const hours = s => s >= 3600 ? `${(s / 3600).toFixed(1).replace('.', ',')} h` : `${Math.round(s / 60)} min`;
+  const svg = (tag, attrs = {}) => { const e = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+  const h = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  function niceMax(v) {
+    if (v <= 4) return Math.max(1, Math.ceil(v));
+    const p = Math.pow(10, Math.floor(Math.log10(v))), n = v / p;
+    return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p;
+  }
+
+  // ───────── Ecrãs de chave / configuração ─────────
+  function gate(message, setup) {
+    app.innerHTML = '';
+    const box = h('div', 'card gate');
+    box.append(h('h1', null, 'Estatísticas'), h('p', 'sub', 'Pitch Invaders · só para quem tem a chave'));
+    if (setup) {
+      box.append(h('p', null, 'Falta configurar a chave no Netlify:'));
+      const ol = h('ol', 'steps');
+      ['Netlify → Project configuration → Environment variables', 'Add a variable: nome STATS_KEY, valor = a tua chave secreta', 'Faz um novo deploy (Deploys → Trigger deploy)'].forEach(t => ol.append(h('li', null, t)));
+      box.append(ol);
+    }
+    const form = h('form');
+    const input = h('input'); input.type = 'password'; input.placeholder = 'Chave (STATS_KEY)'; input.value = state.key; input.autocomplete = 'current-password';
+    const btn = h('button', null, 'Ver estatísticas'); btn.type = 'submit';
+    const err = h('p', 'err', message || '');
+    form.append(input, btn, err);
+    form.addEventListener('submit', e => { e.preventDefault(); state.key = input.value.trim(); store.set('pi-stats-key', state.key); load(); });
+    box.append(form);
+    app.append(box);
+    input.focus();
+  }
+
+  async function load() {
+    app.classList.add('loading');
+    let res, data;
+    try {
+      res = await fetch(`/api/stats?days=${state.days}`, { headers: { 'x-stats-key': state.key }, cache: 'no-store' });
+      data = await res.json().catch(() => null);
+    } catch (e) { res = null; }
+    app.classList.remove('loading');
+    if (!res) return gate('Sem ligação ao servidor.');
+    if (res.status === 503) return gate('', true);
+    if (res.status === 401) return gate(state.key ? 'Chave errada.' : '');
+    if (!res.ok || !data) return gate((data && data.error) || 'Erro no servidor.');
+    state.data = data;
+    render();
+  }
+
+  // ───────── Página ─────────
+  function tile(label, value, note) {
+    const t = h('div', 'tile');
+    t.append(h('div', 'label', label), h('div', 'value', value));
+    if (note) t.append(h('div', 'note', note));
+    return t;
+  }
+
+  function render() {
+    const { days, range, totals, today } = state.data;
+    app.innerHTML = '';
+    const head = h('header');
+    const logo = h('img'); logo.src = '/favicon.svg'; logo.alt = '';
+    const ht = h('div'); ht.append(h('h1', null, 'Pitch Invaders · Estatísticas'), h('p', null, 'Contador anónimo de visitas e partidas · hora de Portugal'));
+    head.append(logo, ht);
+    app.append(head);
+
+    // Filtro de período
+    const filters = h('div', 'filters');
+    const seg = h('div', 'seg');
+    [[7, '7 dias'], [30, '30 dias'], [90, '90 dias']].forEach(([n, label]) => {
+      const b = h('button', null, label); b.setAttribute('aria-pressed', String(n === state.days));
+      b.onclick = () => { state.days = n; load(); };
+      seg.append(b);
+    });
+    const refresh = h('button', 'ghost', '↻ Atualizar'); refresh.onclick = load;
+    filters.append(seg, refresh, h('span', 'updated', `Atualizado às ${new Date().toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })}`));
+    app.append(filters);
+
+    // Números do período
+    const tiles = h('div', 'tiles');
+    const todayRow = days[days.length - 1];
+    tiles.append(
+      tile('Pessoas que jogaram', nf.format(range.players), `hoje: ${nf.format(todayRow.players)}`),
+      tile('Visitantes', nf.format(range.visitors), `hoje: ${nf.format(todayRow.visitors)}`),
+      tile('Partidas', nf.format(range.starts), `hoje: ${nf.format(todayRow.starts)}`),
+      tile('Duração média', range.ends ? secs(range.avgTime) : '—', range.best ? `melhor pontuação: ${nf.format(range.best)}` : ''),
+    );
+    app.append(tiles);
+
+    // Gráfico: partidas por dia
+    const c1 = h('section', 'card');
+    c1.append(h('h2', null, 'Partidas por dia'), h('p', 'sub', `Últimos ${state.days} dias`));
+    c1.append(barChart(days));
+    app.append(c1);
+
+    // Pessoas por dia + dispositivos/câmaras
+    const g = h('div', 'grid2');
+    const c2 = h('section', 'card');
+    c2.append(h('h2', null, 'Pessoas por dia'), h('p', 'sub', 'Quem abriu o jogo e quem chegou a jogar'));
+    c2.append(lineChart(days));
+    const c3 = h('section', 'card');
+    c3.append(h('h2', null, 'Telemóvel ou computador'), h('p', 'sub', 'Dispositivos por dia, somados no período'));
+    c3.append(split(range.mobile, range.desktop));
+    c3.append(h('h2', null, 'Câmara usada ao começar'));
+    c3.append(cams(range.cams));
+    g.append(c2, c3);
+    app.append(g);
+
+    // Desde o início
+    app.append(h('div', 'section-label', `Desde o início${totals.firstDay ? ' (' + dayLong(totals.firstDay) + ')' : ''}`));
+    const t2 = h('div', 'tiles');
+    t2.append(
+      tile('Pessoas que jogaram', nf.format(totals.players)),
+      tile('Visitantes', nf.format(totals.visitors)),
+      tile('Partidas', nf.format(totals.starts)),
+      tile('Tempo total em campo', hours(totals.playTime)),
+      tile('Nomes na classificação', totals.namedPlayers == null ? '—' : nf.format(totals.namedPlayers), 'quem guardou pontuação'),
+    );
+    app.append(t2);
+
+    // Tabela (todos os valores, sem precisar de passar o rato)
+    const det = h('details', 'card');
+    det.append(h('summary', null, 'Ver tabela por dia'));
+    const wrap = h('div', 'scroll'), table = h('table');
+    const trh = h('tr');
+    ['Dia', 'Visitantes', 'Jogadores', 'Partidas', 'Terminadas', 'Duração média', 'Melhor', 'Telemóvel', 'Computador'].forEach(t => trh.append(h('th', null, t)));
+    table.append(trh);
+    [...days].reverse().forEach(d => {
+      const tr = h('tr');
+      [dayLong(d.date), d.visitors, d.players, d.starts, d.ends, d.ends ? secs(d.avgTime) : '—', d.best || '—', d.mobile, d.desktop]
+        .forEach(v => tr.append(h('td', null, typeof v === 'number' ? nf.format(v) : v)));
+      table.append(tr);
+    });
+    wrap.append(table); det.append(wrap);
+    app.append(det);
+  }
+
+  // ───────── Tooltip partilhada ─────────
+  function tooltip(container) {
+    const tip = h('div', 'tip'); container.append(tip);
+    return {
+      show(x, y, title, rows) {
+        tip.innerHTML = '';
+        tip.append(h('div', 't', title));
+        rows.forEach(([color, value, label]) => {
+          const r = h('div', 'row');
+          if (color) { const i = h('i'); i.style.background = color; r.append(i); }
+          r.append(h('b', null, value), h('span', null, label));
+          tip.append(r);
+        });
+        tip.style.display = 'block';
+        const cw = container.clientWidth, tw = tip.offsetWidth;
+        tip.style.left = Math.min(Math.max(0, x - tw / 2), cw - tw) + 'px';
+        tip.style.top = Math.max(0, y - tip.offsetHeight - 10) + 'px';
+      },
+      hide() { tip.style.display = 'none'; },
+    };
+  }
+
+  // Eixo horizontal: poucas datas, nunca a sobrepor
+  function xTicks(g, days, x, H) {
+    const every = Math.ceil(days.length / 6);
+    days.forEach((d, i) => {
+      if ((days.length - 1 - i) % every) return;
+      const t = svg('text', { x: x(i), y: H + 16, 'text-anchor': 'middle', class: 'tick' }); t.textContent = dayShort(d.date); g.append(t);
+    });
+  }
+  function yGrid(g, max, W, H, L) {
+    const steps = max <= 4 ? max : 4;
+    for (let k = 0; k <= steps; k++) {
+      const v = max / steps * k, y = H - H * v / max;
+      g.append(svg('line', { x1: L, x2: W, y1: y, y2: y, stroke: k ? 'var(--grid)' : 'var(--axis)', 'stroke-width': 1 }));
+      const t = svg('text', { x: L - 6, y: y + 4, 'text-anchor': 'end', class: 'tick' }); t.textContent = nf.format(Math.round(v)); g.append(t);
+    }
+  }
+
+  // ───────── Barras: partidas por dia ─────────
+  function barChart(days) {
+    const box = h('div', 'chart');
+    const draw = () => {
+      box.innerHTML = '';
+      const W = Math.max(280, box.clientWidth || 600), H = 180, L = 30;
+      const max = niceMax(Math.max(...days.map(d => d.starts), 1));
+      if (!days.some(d => d.starts)) { box.append(h('div', 'empty', 'Ainda sem partidas neste período.')); return; }
+      const s = svg('svg', { viewBox: `0 0 ${W} ${H + 24}`, height: H + 24, role: 'img', 'aria-label': 'Partidas por dia' });
+      yGrid(s, max, W, H, L);
+      const step = (W - L) / days.length, bw = Math.max(2, Math.min(28, step - 2));
+      const x = i => L + step * i + step / 2;
+      const tip = tooltip(box);
+      days.forEach((d, i) => {
+        const bh = H * d.starts / max, bx = x(i) - bw / 2, by = H - bh, r = Math.min(4, bw / 2, bh);
+        if (d.starts) s.append(svg('path', { d: `M${bx},${H} V${by + r} Q${bx},${by} ${bx + r},${by} H${bx + bw - r} Q${bx + bw},${by} ${bx + bw},${by + r} V${H} Z`, fill: 'var(--series-1)' }));
+        const hit = svg('rect', { x: L + step * i, y: 0, width: step, height: H, class: 'hit', tabindex: 0, 'aria-label': `${dayLong(d.date)}: ${d.starts} partidas` });
+        const show = () => tip.show(x(i), Math.min(by, H - 10), dayLong(d.date), [
+          ['var(--series-1)', nf.format(d.starts), 'partidas'],
+          [null, nf.format(d.players), 'pessoas jogaram'],
+          [null, d.ends ? secs(d.avgTime) : '—', 'duração média'],
+        ]);
+        hit.addEventListener('pointerenter', show); hit.addEventListener('focus', show);
+        hit.addEventListener('pointerleave', tip.hide); hit.addEventListener('blur', tip.hide);
+        s.append(hit);
+      });
+      xTicks(s, days, x, H);
+      box.prepend(s);
+    };
+    requestAnimationFrame(draw);
+    new ResizeObserver(() => draw()).observe(box);
+    return box;
+  }
+
+  // ───────── Linhas: visitantes vs jogadores ─────────
+  function lineChart(days) {
+    const wrap = h('div');
+    const legend = h('div', 'legend');
+    const SERIES = [['visitors', 'Visitantes', 'var(--series-1)'], ['players', 'Jogadores', 'var(--series-2)']];
+    SERIES.forEach(([, label, color]) => { const sp = h('span'); const i = h('i'); i.style.background = color; sp.append(i, document.createTextNode(label)); legend.append(sp); });
+    const box = h('div', 'chart');
+    wrap.append(legend, box);
+    const draw = () => {
+      box.innerHTML = '';
+      const W = Math.max(260, box.clientWidth || 500), H = 170, L = 30, R = 70;
+      const max = niceMax(Math.max(...days.map(d => d.visitors), 1));
+      const s = svg('svg', { viewBox: `0 0 ${W} ${H + 24}`, height: H + 24, role: 'img', 'aria-label': 'Visitantes e jogadores por dia' });
+      yGrid(s, max, W - R, H, L);
+      const step = days.length > 1 ? (W - R - L) / (days.length - 1) : 0;
+      const x = i => L + step * i, y = v => H - H * v / max;
+      SERIES.forEach(([k, label, color]) => {
+        s.append(svg('path', { d: days.map((d, i) => `${i ? 'L' : 'M'}${x(i)},${y(d[k])}`).join(' '), fill: 'none', stroke: color, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+        const last = days[days.length - 1];
+        const t = svg('text', { x: x(days.length - 1) + 8, y: y(last[k]) + (k === 'players' && last.players === last.visitors ? 14 : 4), class: 'tick', fill: 'var(--text-2)' });
+        t.textContent = `${label} ${nf.format(last[k])}`; t.setAttribute('style', 'fill: var(--text-2)');
+        s.append(t);
+      });
+      xTicks(s, days, x, H);
+      // Cruz que segue o rato e encaixa no dia mais próximo
+      const cross = svg('line', { y1: 0, y2: H, stroke: 'var(--axis)', 'stroke-width': 1, visibility: 'hidden' });
+      const dots = SERIES.map(([, , color]) => svg('circle', { r: 4, fill: color, stroke: 'var(--surface)', 'stroke-width': 2, visibility: 'hidden' }));
+      s.append(cross, ...dots);
+      const tip = tooltip(box);
+      const overlay = svg('rect', { x: L - step / 2, y: 0, width: W - R - L + step, height: H, class: 'hit' });
+      overlay.addEventListener('pointermove', e => {
+        const rect = s.getBoundingClientRect(), px = (e.clientX - rect.left) * W / rect.width;
+        const i = Math.max(0, Math.min(days.length - 1, Math.round((px - L) / (step || 1))));
+        const d = days[i];
+        cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('visibility', 'visible');
+        SERIES.forEach(([k], j) => { dots[j].setAttribute('cx', x(i)); dots[j].setAttribute('cy', y(d[k])); dots[j].setAttribute('visibility', 'visible'); });
+        tip.show(x(i) * rect.width / W, y(d.visitors) * rect.height / (H + 24), dayLong(d.date), SERIES.map(([k, label, color]) => [color, nf.format(d[k]), label.toLowerCase()]));
+      });
+      overlay.addEventListener('pointerleave', () => { tip.hide(); cross.setAttribute('visibility', 'hidden'); dots.forEach(c => c.setAttribute('visibility', 'hidden')); });
+      s.append(overlay);
+      box.prepend(s);
+    };
+    requestAnimationFrame(draw);
+    new ResizeObserver(() => draw()).observe(box);
+    return wrap;
+  }
+
+  // ───────── Telemóvel vs computador (parte de um todo) ─────────
+  function split(mobile, desktop) {
+    const total = mobile + desktop, wrap = h('div');
+    if (!total) { wrap.append(h('div', 'empty', 'Sem dados neste período.')); return wrap; }
+    const legend = h('div', 'legend');
+    [['Telemóvel', 'var(--series-1)'], ['Computador', 'var(--series-2)']].forEach(([label, color]) => { const sp = h('span'); const i = h('i', 'rect'); i.style.background = color; sp.append(i, document.createTextNode(label)); legend.append(sp); });
+    const bar = h('div', 'split');
+    [[mobile, 'var(--series-1)'], [desktop, 'var(--series-2)']].forEach(([v, color]) => { if (!v) return; const d = h('div'); d.style.flex = String(v); d.style.background = color; bar.append(d); });
+    const pm = Math.round(mobile / total * 100);
+    const labels = h('div', 'split-labels');
+    const a = h('span'); a.append(h('b', null, pm + '%'), document.createTextNode(` telemóvel (${nf.format(mobile)})`));
+    const b = h('span'); b.append(h('b', null, (100 - pm) + '%'), document.createTextNode(` computador (${nf.format(desktop)})`));
+    labels.append(a, b);
+    wrap.append(legend, bar, labels);
+    wrap.style.marginBottom = '22px';
+    return wrap;
+  }
+
+  // ───────── Câmaras (uma só série, barras horizontais) ─────────
+  function cams(c) {
+    const NAMES = [['tv', '📺 TV'], ['ombro', '🎥 Ombro'], ['peito', '📷 GoPro'], ['cabeca', '👀 Cabeça']];
+    const wrap = h('div'), max = Math.max(1, ...NAMES.map(([k]) => c[k] || 0));
+    if (!Object.values(c).some(Boolean)) { wrap.append(h('div', 'empty', 'Sem partidas neste período.')); return wrap; }
+    NAMES.forEach(([k, label]) => {
+      const row = h('div', 'hbar-row'), track = h('div', 'track'), fill = h('div', 'fill');
+      fill.style.width = ((c[k] || 0) / max * 100) + '%';
+      track.append(fill);
+      row.append(h('span', null, label), track, h('span', 'v', nf.format(c[k] || 0)));
+      wrap.append(row);
+    });
+    return wrap;
+  }
+
+  if (state.key) load(); else gate('');
+})();
+</script>
+</body>
+</html>

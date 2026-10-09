@@ -1,10 +1,11 @@
 // Regras do jogo: começar, pontuar (selfies, golos, dribles, TV), aparecer seguranças e ser apanhado.
-import { game, world, score } from '../state.js';
+import { game, world, score, camMode } from '../state.js';
 import { STEWARDS, SCORE } from '../config.js';
 import { $, dist, storageSet, isTouch } from '../utils.js';
 import { audio, beep, whistle, crowdGoal, crowdCheer, crowdOoh, crowdBoo } from './audio.js';
 import { lockMouse, unlockMouse, releaseAll } from './input.js';
 import { moveZone } from './broadcast.js';
+import { track } from './analytics.js';
 import { resetInvader, updateInvader, startDash } from '../entities/invader.js';
 import { starRunAway } from '../entities/players.js';
 import { spawnSteward, clearStewards, updateStewards } from '../entities/stewards.js';
@@ -43,6 +44,7 @@ export function tryStart() {
   audio();
   reset();
   game.state = 'play';
+  track('start', { camera: camMode().id });
   hideOverlay();
   showHud(true);
   $('touch').classList.toggle('hidden', !isTouch());
@@ -71,6 +73,7 @@ function gameOver() {
   game.shake = 0.4;
   world.invader.vx = world.invader.vz = 0;
   const sc = score(), record = sc > game.best;
+  track('end', { time: game.time, score: sc, camera: camMode().id });
   if (record) { game.best = sc; storageSet('invasao3d-best', sc); }
   showGameOver(sc, record);
 }

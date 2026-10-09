@@ -21,12 +21,22 @@ Em `npm run dev` a tabela de recordes aparece como "indisponível": a função s
 O `netlify.toml` já tem tudo configurado (build `npm run build`, pasta `dist`, funções em `netlify/functions`).
 Cada push para `main` publica o site automaticamente.
 
+## Estatísticas (/stats)
+
+O jogo conta, de forma anónima, visitas, partidas iniciadas e partidas terminadas (cada browser tem um
+identificador aleatório; o servidor só guarda um hash). Os números estão em https://improvee.pt/stats.
+
+A página está protegida por uma chave: no Netlify, **Project configuration → Environment variables**, criar
+`STATS_KEY` com um valor secreto e fazer um novo deploy. Sem a variável, a página fica fechada.
+
 ## Estrutura
 
 ```
 index.html              página (HUD, menus) — carrega src/main.js
 public/models/          modelo 3D dos bonecos (Xbot da Mixamo, com animações)
-netlify/functions/      scores.mjs — API da tabela de recordes (/api/scores, guarda no Netlify Blobs)
+netlify/functions/      scores.mjs — classificação (/api/scores) · stats.mjs — contador de partidas (/api/stats)
+netlify/shared/         datas na hora de Portugal
+public/stats.html       página de estatísticas
 src/
   main.js               arranque e ciclo do jogo (~60x por segundo)
   config.js             números para afinar: velocidades, pontos, mergulho, câmaras

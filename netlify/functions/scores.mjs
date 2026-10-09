@@ -4,6 +4,7 @@
 // Cada jogador (nome, sem distinguir maiúsculas nem acentos) aparece uma só vez: com o seu melhor resultado.
 // "Hoje" e "esta semana" (a começar à segunda-feira) seguem a hora de Portugal.
 import { getStore } from '@netlify/blobs';
+import { lisbonDay, periodStarts } from '../shared/lisbon.mjs';
 
 const KEY = 'board-v2';
 const LEGACY_KEY = 'top';
@@ -11,7 +12,6 @@ const SHOW = 10;
 const MAX_PLAYERS = 1000;      // recordes de sempre guardados
 const RECENT_DAYS = 8;         // pontuações recentes guardadas (chegam para "esta semana")
 const MAX_RECENT = 5000;
-const TZ = 'Europe/Lisbon';
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
   status, headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
@@ -43,15 +43,7 @@ export function validate(body, now = new Date()) {
   return { entry: { name, score, time, selfies, goals, dodges, at: now.toISOString() } };
 }
 
-// Data (AAAA-MM-DD) em Portugal
-const lisbonDay = date => new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
-
-export function periodStarts(now = new Date()) {
-  const day = lisbonDay(now);
-  const weekday = (new Date(day + 'T12:00:00Z').getUTCDay() + 6) % 7;     // 0 = segunda-feira
-  const monday = new Date(Date.parse(day + 'T12:00:00Z') - weekday * 864e5).toISOString().slice(0, 10);
-  return { day, week: monday };
-}
+export { periodStarts };
 
 const better = (a, b) => b.score - a.score || a.time - b.time;
 const pub = ({ name, score, time, selfies, goals, dodges }) => ({ name, score, time, selfies, goals, dodges });

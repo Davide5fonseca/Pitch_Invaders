@@ -2,6 +2,7 @@
 import './style.css';
 import { render, adaptQuality } from './systems/renderer.js';
 import { audio, updateCrowdAudio, isMuted, setMuted, audioState } from './systems/audio.js';
+import { track } from './systems/analytics.js';
 import { game, view, world, inGame, firstPerson, relControls, camMode } from './state.js';
 import { buildStadium, updateCrowd } from './world/stadium.js';
 import { loadModel, place } from './entities/character.js';
@@ -84,3 +85,4 @@ buildBall();
 buildBroadcast();
 game.state = 'menu';
 showMenu();
+track('visit');
