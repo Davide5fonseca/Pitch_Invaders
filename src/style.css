@@ -223,3 +223,9 @@ body.touch #gopro { top: calc(64px + var(--safe-t)); }
   font-weight: 800; font-size: 13px; letter-spacing: .02em; cursor: pointer; }
 .tabs button:hover { color: #fff; }
 .tabs button[aria-selected="true"] { background: var(--gold); color: #1a1200; }
+
+/* Seta para o Ronaldo */
+#ronArrow { position: fixed; left: 0; top: 0; display: flex; align-items: center; gap: 6px; padding: 5px 10px 5px 6px; border-radius: 999px;
+  background: rgba(10,14,28,.78); border: 1px solid rgba(255,209,102,.6); color: var(--gold); font-size: 13px; letter-spacing: .06em;
+  pointer-events: none; white-space: nowrap; box-shadow: 0 0 18px rgba(255,209,102,.45); }
+#ronArrow .ar { display: inline-block; font-size: 18px; line-height: 1; }

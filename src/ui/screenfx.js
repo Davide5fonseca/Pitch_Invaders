@@ -1,5 +1,7 @@
 // Efeitos de ecrã das câmaras: GoPro (REC), vinheta da cabeça, cansaço e "atrás de ti".
 import { game, world, view, camMode, firstPerson, relControls, inGame } from '../state.js';
+import * as THREE from 'three';
+import { camera } from '../systems/renderer.js';
 import { $, clamp, dist, pad2, forward } from '../utils.js';
 
 function timecode(t) {
@@ -26,4 +28,25 @@ export function updateScreenFx() {
     }
   }
   $('warn').classList.toggle('hidden', !behind);
+  updateRonaldoArrow();
+}
+
+// Seta na borda do ecrã a apontar para o Ronaldo quando ele está fora da vista
+const v = new THREE.Vector3();
+function updateRonaldoArrow() {
+  const el = $('ronArrow'), star = world.star;
+  if (game.state !== 'play' || !star || star.cool > 0) { el.classList.add('hidden'); return; }
+  v.set(star.x, 1.8, star.z).applyMatrix4(camera.matrixWorldInverse);
+  const behindCam = v.z > 0;                       // atrás da câmara
+  v.applyMatrix4(camera.projectionMatrix);
+  let x = v.x, y = v.y;
+  if (!behindCam && Math.abs(x) < 1 && Math.abs(y) < 1) { el.classList.add('hidden'); return; }   // está à vista
+  if (behindCam) { x = -x; y = -y; }
+  // Leva o ponto até à borda (com margem), mantendo a direção a partir do centro
+  const k = 1 / Math.max(Math.abs(x) / 0.86, Math.abs(y) / 0.78, 1e-6);
+  x *= k; y *= k;
+  const px = (x + 1) / 2 * innerWidth, py = (1 - y) / 2 * innerHeight;
+  el.classList.remove('hidden');
+  el.style.transform = `translate(${px}px, ${py}px) translate(-50%, -50%)`;
+  el.querySelector('.ar').style.transform = `rotate(${Math.atan2(-y * innerHeight, x * innerWidth)}rad)`;
 }

@@ -16,10 +16,11 @@ const HAIRS = ['#15100c', '#2b1d14', '#4a3020', '#6b4a2b', '#a8793f', '#d9b56c',
 const pick = a => a[Math.floor(Math.random() * a.length)];
 
 export const KITS = {
-  home:    { shirt: '#c8102e', sleeve: '#c8102e', trim: '#ffffff', shorts: '#f2f2f2', socks: '#c8102e', boots: '#111111', print: '#ffffff' },
-  away:    { shirt: '#f4f4f4', sleeve: '#f4f4f4', trim: '#1b2a4a', shorts: '#1b2a4a', socks: '#f4f4f4', boots: '#c6f432', print: '#1b2a4a' },
-  homeGk:  { shirt: '#1aa34a', sleeve: '#1aa34a', trim: '#0b3d1f', shorts: '#111111', socks: '#1aa34a', boots: '#111111', gloves: '#f2f2f2', longSleeves: true, print: '#ffffff' },
-  awayGk:  { shirt: '#f4a300', sleeve: '#f4a300', trim: '#222222', shorts: '#222222', socks: '#f4a300', boots: '#ffffff', gloves: '#222222', longSleeves: true, print: '#222222' },
+  // Portugal: vermelho com verde, números dourados · Brasil: amarelo com verde, calções azuis
+  portugal:   { shirt: '#c8102e', sleeve: '#c8102e', trim: '#046a38', shorts: '#046a38', socks: '#c8102e', boots: '#111111', print: '#f6c445' },
+  brazil:     { shirt: '#ffd400', sleeve: '#ffd400', trim: '#009c3b', shorts: '#002776', socks: '#f4f4f4', boots: '#f4f4f4', print: '#009c3b' },
+  portugalGk: { shirt: '#00a3a3', sleeve: '#00a3a3', trim: '#063b3b', shorts: '#063b3b', socks: '#00a3a3', boots: '#111111', gloves: '#f2f2f2', longSleeves: true, print: '#ffffff' },
+  brazilGk:   { shirt: '#1d1d1d', sleeve: '#1d1d1d', trim: '#009c3b', shorts: '#1d1d1d', socks: '#1d1d1d', boots: '#ffd400', gloves: '#ffd400', longSleeves: true, print: '#ffd400' },
   ref:     { shirt: '#141414', sleeve: '#141414', trim: '#ffd400', shorts: '#141414', socks: '#141414', boots: '#111111', print: '#ffd400' },
   steward: { shirt: '#d4f70f', sleeve: '#24262b', trim: '#c9d1d9', shorts: '#24262b', socks: '#24262b', boots: '#0d0d0d', longSleeves: true, trousers: true, print: '#111111', back: 'SEGURANÇA' },
   police:  { shirt: '#1f2a44', sleeve: '#1f2a44', trim: '#d9e021', shorts: '#182033', socks: '#182033', boots: '#0d0d0d', longSleeves: true, trousers: true, print: '#ffffff', back: 'POLÍCIA' },
@@ -124,10 +125,22 @@ export function makePrint() {
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.32, 0.16),
     new THREE.MeshStandardMaterial({ map, transparent: true, alphaTest: 0.35, roughness: 0.7, polygonOffset: true, polygonOffsetFactor: -2 }));
   mesh.visible = false;
-  mesh.userData.set = (text, color) => {
+  mesh.userData.set = (text, color, name) => {
     g.clearRect(0, 0, 256, 128);
     mesh.visible = !!text;
     if (!text) return;
+    g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = color;
+    if (name) {
+      let ns = 30;
+      g.font = `900 ${ns}px "Arial Black", system-ui, sans-serif`;
+      const nw = g.measureText(name).width;
+      if (nw > 140) { ns *= 140 / nw; g.font = `900 ${ns}px "Arial Black", system-ui, sans-serif`; }
+      g.fillText(name, 128, 22);
+      g.font = '900 84px "Arial Black", system-ui, sans-serif';
+      g.fillText(text, 128, 84);
+      map.needsUpdate = true;
+      return;
+    }
     const big = String(text).length <= 2;
     let size = big ? 110 : 44;
     g.font = `900 ${size}px "Arial Black", system-ui, sans-serif`;

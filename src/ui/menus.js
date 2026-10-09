@@ -107,7 +107,7 @@ export function showMenu() {
     <section class="menu-main">
       <div class="kicker">⚽ Jogo 3D · grátis no browser</div>
       <h1 class="logo"><span>Pitch</span><span>Invaders</span></h1>
-      <p class="tagline">Salta para o relvado, tira selfies com o craque, marca golos e aparece no ecrã gigante, antes que os seguranças te apanhem.</p>
+      <p class="tagline">Salta para o relvado no Portugal–Brasil e corre até ao Ronaldo para a selfie da tua vida, antes que os seguranças te apanhem.</p>
       <div class="actions">
         <button class="btn-play" data-act="play">▶ Jogar</button>
         <button class="btn-icon" data-act="sound" aria-label="Som"></button>
@@ -117,7 +117,7 @@ export function showMenu() {
       <div class="chips">${cameraChips()}</div>
       <div class="section-title">Como ganhar pontos</div>
       <div class="score-grid">
-        <div class="sc"><i>📸</i><div><b>+${SCORE.selfie}</b><span>Selfie com o nº 10</span></div></div>
+        <div class="sc"><i>📸</i><div><b>+${SCORE.selfie}</b><span>Selfie com o Ronaldo</span></div></div>
         <div class="sc"><i>⚽</i><div><b>+${SCORE.goal}</b><span>Golo</span></div></div>
         <div class="sc"><i>📺</i><div><b>+${SCORE.tvPerSecond}/s</b><span>No círculo da TV</span></div></div>
         <div class="sc"><i>🤸</i><div><b>+${SCORE.dodge}</b><span>Drible a um mergulho</span></div></div>

@@ -53,7 +53,7 @@ export function pitchTexture() {
 export function crowdCanvas() {
   const [c, g] = canvas(512, 256);
   g.fillStyle = '#151820'; g.fillRect(0, 0, 512, 256);
-  const shirts = ['#d0202a', '#d0202a', '#f4f4f4', '#1e3a8a', '#ffb703', '#2a9d8f', '#e76f51', '#8ecae6', '#222'];
+  const shirts = ['#c8102e', '#c8102e', '#c8102e', '#046a38', '#ffd400', '#ffd400', '#ffd400', '#009c3b', '#002776', '#f4f4f4', '#222'];
   const skins = ['#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#ffdbac'];
   for (let row = 0, y = 8; y < 256; y += 12, row++) {
     for (let x = 4 + (row % 2) * 5; x < 512; x += 10) {
@@ -103,9 +103,13 @@ export function netTexture() {
 }
 
 export function labelTexture(text, color) {
-  const [c, g] = canvas(256, 96);
-  g.font = '900 64px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.lineWidth = 10; g.strokeStyle = 'rgba(0,0,0,.7)'; g.strokeText(text, 128, 50);
-  g.fillStyle = color; g.fillText(text, 128, 50);
+  const [c, g] = canvas(512, 110);
+  let size = 72;
+  g.font = `900 ${size}px system-ui, sans-serif`;
+  const w = g.measureText(text).width;
+  if (w > 480) { size *= 480 / w; g.font = `900 ${size}px system-ui, sans-serif`; }
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.lineWidth = 12; g.strokeStyle = 'rgba(0,0,0,.7)'; g.strokeText(text, 256, 58);
+  g.fillStyle = color; g.fillText(text, 256, 58);
   return texture(c);
 }

@@ -53,8 +53,8 @@ export function tryStart() {
   crowdCheer(0.9);                             // o público vibra quando entras em campo
   if (firstGame) {
     toast(isTouch()
-      ? `🕹️ Joystick à esquerda · FINTA à direita · 📺 entra no círculo vermelho (+${SCORE.tvPerSecond}/s)`
-      : `📺 Entra no círculo vermelho para apareceres no ecrã gigante (+${SCORE.tvPerSecond}/s)`);
+      ? `🕹️ Joystick à esquerda · FINTA à direita · ⭐ corre até ao Ronaldo!`
+      : `⭐ Corre até ao Ronaldo para a selfie · 📺 no círculo vermelho apareces no ecrã gigante`);
     firstGame = false;
   }
 }
@@ -88,7 +88,8 @@ function trySelfie() {
   game.selfies++;
   star.cool = 2.5;
   flash();
-  float(`+${SCORE.selfie} SELFIE! 📸`, star.x, star.z, '#ffd166');
+  float(`+${SCORE.selfie} SELFIE COM O RONALDO! 📸`, star.x, star.z, '#ffd166');
+  setTimeout(() => float('SIUUU!', star.x, star.z, '#ffd166', true), 350);
   beep(880, 0.08); setTimeout(() => beep(1320, 0.12), 80);
   crowdCheer(0.6);
   starRunAway(invader);

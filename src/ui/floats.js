@@ -11,7 +11,7 @@ export function float(text, x, z, color, huge = false) {
   el.textContent = text;
   el.style.color = color;
   document.body.appendChild(el);
-  floats.push({ el, x, z, t: 0 });
+  floats.push({ el, x, z, t: 0, y0: huge ? 4.4 : 2.8 });      // os grandes ficam por cima dos pequenos
 }
 
 export function updateFloats(dt) {
@@ -19,7 +19,7 @@ export function updateFloats(dt) {
     const f = floats[i];
     f.t += dt;
     if (f.t > LIFE) { f.el.remove(); floats.splice(i, 1); continue; }
-    proj.set(f.x, 2.8 + f.t * 1.5, f.z).project(camera);
+    proj.set(f.x, f.y0 + f.t * 1.5, f.z).project(camera);
     f.el.style.transform = `translate(${(proj.x + 1) / 2 * innerWidth}px, ${(1 - proj.y) / 2 * innerHeight}px) translate(-50%, -50%)`;
     f.el.style.opacity = 1 - f.t / LIFE;
   }

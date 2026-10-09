@@ -68,7 +68,7 @@ function makeXbot(kit, look) {
   return {
     root,
     setKit(k) { kitPalette(k, look, palette); },
-    setPrint(text, color) { print.userData.set(text, color); },
+    setPrint(text, color, name) { print.userData.set(text, color, name); },
     // Mistura parado → andar → correr conforme a velocidade
     update(dt, sp) {
       const wI = clamp(1 - sp / 1.6, 0, 1), wR = clamp((sp - 2.2) / 2.8, 0, 1), wW = clamp(1 - wI - wR, 0, 1);
@@ -118,9 +118,9 @@ function makeProcedural(kit, look) {
 }
 
 // Uma "entidade" é a posição/velocidade no campo + o boneco que a representa
-export function makeEntity(kit, x, z, { look = randomLook(), print } = {}) {
+export function makeEntity(kit, x, z, { look = randomLook(), print, printName } = {}) {
   const ch = world.xbot ? makeXbot(kit, look) : makeProcedural(kit, look);
-  ch.setPrint(print ?? kit.back, kit.print);
+  ch.setPrint(print ?? kit.back, kit.print, printName);
   scene.add(ch.root);
   return { ch, x, z, vx: 0, vz: 0, heading: 0, tilt: 0, lift: 0 };
 }
@@ -147,7 +147,8 @@ export function ring(color, r1, r2) {
 }
 
 export function label(text, color) {
-  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: labelTexture(text, color), depthTest: false }));
-  s.scale.set(1.8, 0.68, 1); s.position.y = 2.45; s.renderOrder = 10;
+  // Tamanho fixo no ecrã: legível de longe, sem tapar a vista quando estás perto
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: labelTexture(text, color), depthTest: false, sizeAttenuation: false }));
+  s.scale.set(0.16, 0.034, 1); s.position.y = 2.45; s.renderOrder = 10;
   return s;
 }
