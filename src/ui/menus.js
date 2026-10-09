@@ -3,6 +3,7 @@ import { game, world, view } from '../state.js';
 import { SCORE, CAM_MODES } from '../config.js';
 import { $, storageGet, storageSet, isTouch } from '../utils.js';
 import { fetchScores, submitScore } from '../systems/leaderboard.js';
+import { isMuted } from '../systems/audio.js';
 
 const SITE = 'https://improvee.pt';
 const CAM_ICONS = { tv: '📺', ombro: '🎥', peito: '📷', cabeca: '👀' };
@@ -13,7 +14,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;'
 const myName = () => storageGet('invasao3d-name', '');
 
 // Ações dos botões (definidas em main.js para evitar dependências circulares)
-let handlers = { start() {}, setCamera() {} };
+let handlers = { start() {}, setCamera() {}, toggleSound() {} };
 export function setMenuHandlers(h) { handlers = h; }
 
 overlay().addEventListener('click', e => {
@@ -22,6 +23,7 @@ overlay().addEventListener('click', e => {
   if (act.dataset.act === 'play') handlers.start();
   else if (act.dataset.act === 'cam') handlers.setCamera(+act.dataset.cam);
   else if (act.dataset.act === 'share') share(act);
+  else if (act.dataset.act === 'sound') { handlers.toggleSound(); act.blur(); }
 });
 
 function board(scores, { highlight, count, title }) {
@@ -44,6 +46,12 @@ function board(scores, { highlight, count, title }) {
 function cameraChips() {
   return CAM_MODES.map((m, i) =>
     `<button class="chip" data-act="cam" data-cam="${i}" aria-pressed="${i === view.camMode}">${CAM_ICONS[m.id] || '📷'} ${m.name}</button>`).join('');
+}
+
+// Ícone de som em todos os botões (painel e menus)
+export function updateSoundButtons() {
+  const icon = isMuted() ? '🔇' : '🔊';
+  document.querySelectorAll('#soundBtn, [data-act=sound]').forEach(b => { b.textContent = icon; b.title = isMuted() ? 'Ligar o som (M)' : 'Desligar o som (M)'; });
 }
 
 export function updateMenuCamera() {
@@ -73,6 +81,7 @@ export function showMenu() {
       <p class="tagline">Salta para o relvado, tira selfies com o craque, marca golos e aparece no ecrã gigante, antes que os seguranças te apanhem.</p>
       <div class="actions">
         <button class="btn-play" data-act="play">▶ Jogar</button>
+        <button class="btn-icon" data-act="sound" aria-label="Som"></button>
         <span class="hint desktop-only">ou prime <kbd>Espaço</kbd></span>
       </div>
       <div class="section-title">Câmara</div>
@@ -91,6 +100,7 @@ export function showMenu() {
     <aside class="menu-side"><div class="board" id="lbMenu">${board(undefined, { title: 'Melhores de sempre' })}</div></aside>
   </div>`;
   o.classList.remove('hidden');
+  updateSoundButtons();
   fetchScores().then(d => {
     const el = $('lbMenu');
     if (el && game.state === 'menu') el.innerHTML = board(d?.scores ?? null, { count: 10, title: 'Melhores de sempre' });
@@ -142,12 +152,14 @@ export function showGameOver(points, record) {
       <div class="actions">
         <button class="btn-play" data-act="play">▶ Jogar outra vez</button>
         <button class="btn-sec" data-act="share">📤 Partilhar</button>
+        <button class="btn-icon" data-act="sound" aria-label="Som"></button>
       </div>
       <p class="hint desktop-only">ou prime <kbd>Espaço</kbd> para jogar outra vez</p>
     </section>
     <aside class="menu-side"><div class="board" id="lbTable">${board(undefined, { title: 'Top 10' })}</div></aside>
   </div>`;
   o.classList.remove('hidden');
+  updateSoundButtons();
   countUp($('finalScore'), points);
 
   fetchScores().then(d => { const t = $('lbTable'); if (t && !t.dataset.final) t.innerHTML = board(d?.scores ?? null, { count: 10, title: 'Top 10' }); });

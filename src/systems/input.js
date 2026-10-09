@@ -75,7 +75,7 @@ function onTouchDown(e, handlers) {
   touches.set(e.pointerId, t);
 }
 
-// handlers: { start(), dash(), cycleCamera() }
+// handlers: { start(), dash(), cycleCamera(), toggleSound() }
 export function initInput(handlers) {
   if (matchMedia('(pointer: coarse)').matches) setTouchMode(true);
   const canStart = () => game.state === 'menu' || game.state === 'over';
@@ -90,6 +90,7 @@ export function initInput(handlers) {
       else if (game.state === 'play' && e.code === 'Space') handlers.dash();
     }
     if (e.code === 'KeyC' && !e.repeat && game.state !== 'loading') handlers.cycleCamera();
+    if (e.code === 'KeyM' && !e.repeat) handlers.toggleSound();
   });
   addEventListener('keyup', e => { keys[e.code] = false; });
   addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
@@ -144,6 +145,7 @@ export function initInput(handlers) {
 
   $('dashBtn').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); handlers.dash(); });
   $('camBtn').addEventListener('click', e => { e.stopPropagation(); handlers.cycleCamera(); e.currentTarget.blur(); });
+  $('soundBtn').addEventListener('click', e => { e.stopPropagation(); handlers.toggleSound(); e.currentTarget.blur(); });
 }
 
 // Larga tudo (fim de jogo, menu)

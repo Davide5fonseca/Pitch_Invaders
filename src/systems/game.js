@@ -2,7 +2,7 @@
 import { game, world, score } from '../state.js';
 import { STEWARDS, SCORE } from '../config.js';
 import { $, dist, storageSet, isTouch } from '../utils.js';
-import { audio, ambience, beep, roar, whistle, ooh } from './audio.js';
+import { audio, beep, whistle, crowdGoal, crowdCheer, crowdOoh, crowdBoo } from './audio.js';
 import { lockMouse, unlockMouse, releaseAll } from './input.js';
 import { moveZone } from './broadcast.js';
 import { resetInvader, updateInvader, startDash } from '../entities/invader.js';
@@ -40,7 +40,7 @@ function reset() {
 
 export function tryStart() {
   if (game.state === 'over' && performance.now() - game.overAt < 700) return;
-  audio(); ambience();
+  audio();
   reset();
   game.state = 'play';
   hideOverlay();
@@ -48,7 +48,7 @@ export function tryStart() {
   $('touch').classList.toggle('hidden', !isTouch());
   goFullscreen();
   lockMouse();
-  roar(2);
+  crowdCheer(0.9);                             // o público vibra quando entras em campo
   if (firstGame) {
     toast(isTouch()
       ? `🕹️ Joystick à esquerda · FINTA à direita · 📺 entra no círculo vermelho (+${SCORE.tvPerSecond}/s)`
@@ -67,6 +67,7 @@ function gameOver() {
   showHud(false);
   buzz([80, 60, 200]);
   whistle();
+  setTimeout(crowdBoo, 250);
   game.shake = 0.4;
   world.invader.vx = world.invader.vz = 0;
   const sc = score(), record = sc > game.best;
@@ -86,6 +87,7 @@ function trySelfie() {
   flash();
   float(`+${SCORE.selfie} SELFIE! 📸`, star.x, star.z, '#ffd166');
   beep(880, 0.08); setTimeout(() => beep(1320, 0.12), 80);
+  crowdCheer(0.6);
   starRunAway(invader);
   buzz(25);
   spawnSteward();
@@ -95,7 +97,7 @@ function onGoal() {
   const { ball } = world;
   game.goals++;
   float(`GOLOOOO! +${SCORE.goal}`, ball.x, ball.z, '#7cf29c', true);
-  roar(2.5);
+  crowdGoal();
   game.shake = 0.6;
   game.celebrate = 2.5;
   buzz([40, 40, 40]);
@@ -107,7 +109,7 @@ function onDodge(n) {
   game.dodges += n;
   const inv = world.invader;
   float(`DRIBLE! +${SCORE.dodge * n}`, inv.x, inv.z, '#8ecae6');
-  ooh();
+  crowdOoh();
   buzz(30);
 }
 

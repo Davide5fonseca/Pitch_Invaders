@@ -52,3 +52,17 @@ legacy/                 versões antigas num só ficheiro (2D e 3D)
 ```
 
 Para mudar a dificuldade, começa por `src/config.js`. Para mudar equipamentos, `src/entities/kits.js`.
+
+## Créditos de som
+
+Gravações reais de público, todas em domínio público (CC0), de [Freesound](https://freesound.org):
+
+- Ambiente: [Millerntor Stadium Crowd Reaction Mood Waves](https://freesound.org/people/itmightgetloud/sounds/829456/) (itmightgetloud) +
+  [Soccer fans screaming and playing drums in a small stadium of Chile](https://freesound.org/people/felix.blume/sounds/500250/) (felix.blume)
+- Em direto: [Crowd screaming GOAL — Mexico-Holland 2014](https://freesound.org/people/felix.blume/sounds/241630/) (felix.blume)
+- Golo: [Millerntor Stadium Crowd Reaction Goal](https://freesound.org/people/itmightgetloud/sounds/829455/) (itmightgetloud)
+- Festejo: [Goal.wav](https://freesound.org/people/Sandermotions/sounds/494352/) (Sandermotions)
+- Drible: [Soccer stadium Oehh](https://freesound.org/people/Sandermotions/sounds/494362/) (Sandermotions)
+- Apanhado: [crowd booing](https://freesound.org/people/HowardV/sounds/264378/) (HowardV)
+
+O apito, o chuto e os sons de interface são gerados em código.

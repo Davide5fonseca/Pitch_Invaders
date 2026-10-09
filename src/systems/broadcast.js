@@ -7,7 +7,6 @@ import { BROADCAST, SCORE, HW } from '../config.js';
 import { $, rand, clamp, dist, isTouch } from '../utils.js';
 import { makeEntity } from '../entities/character.js';
 import { KITS } from '../entities/kits.js';
-import { setExcitement } from './audio.js';
 
 const feed = new THREE.WebGLRenderTarget(512, 288, { samples: 4 });
 const tvCam = new THREE.PerspectiveCamera(25, 16 / 9, 0.5, 400);
@@ -106,7 +105,6 @@ export function updateBroadcast(dt, now) {
     }
     if (zone.t <= 0 || zone.airtime >= BROADCAST.maxAirtime) moveZone();
   }
-  setExcitement(game.live ? 1 : 0);
 
   // O círculo pisca mais depressa quando estás em direto
   const pulse = 0.5 + 0.5 * Math.sin(now / (game.live ? 90 : 250));

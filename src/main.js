@@ -1,6 +1,7 @@
 // Arranque e ciclo principal do jogo.
 import './style.css';
 import { render, adaptQuality } from './systems/renderer.js';
+import { audio, updateCrowdAudio, isMuted, setMuted, audioState } from './systems/audio.js';
 import { game, view, world, inGame, firstPerson, relControls, camMode } from './state.js';
 import { buildStadium, updateCrowd } from './world/stadium.js';
 import { loadModel, place } from './entities/character.js';
@@ -14,7 +15,7 @@ import { tryStart, dash, updatePlay } from './systems/game.js';
 import { buildBroadcast, updateBroadcast, renderLiveInset, zoneState } from './systems/broadcast.js';
 import { updateHud } from './ui/hud.js';
 import { drawMap } from './ui/minimap.js';
-import { showMenu, setMenuHandlers } from './ui/menus.js';
+import { showMenu, setMenuHandlers, updateSoundButtons } from './ui/menus.js';
 import { updateFloats } from './ui/floats.js';
 import { updateScreenFx } from './ui/screenfx.js';
 
@@ -56,15 +57,21 @@ function loop(now) {
 
   updateCamera(dt);
   updateFloats(dt);
+  updateCrowdAudio();
   render(camMode().id === 'peito' && inGame());
   if (game.state !== 'loading') renderLiveInset();
 }
 
 // Só em desenvolvimento: acesso ao estado pela consola do browser (não vai para o site publicado)
-if (import.meta.env.DEV) window.__game = { game, view, world, zone: zoneState };
+if (import.meta.env.DEV) window.__game = { game, view, world, zone: zoneState, audioState };
 
-initInput({ start: tryStart, dash, cycleCamera: () => setCamMode(view.camMode + 1) });
-setMenuHandlers({ start: tryStart, setCamera: i => setCamMode(i) });
+// Som: o browser só deixa tocar depois do primeiro toque/tecla
+for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => audio(), { once: true, capture: true });
+function toggleSound() { setMuted(!isMuted()); updateSoundButtons(); }
+
+initInput({ start: tryStart, dash, cycleCamera: () => setCamMode(view.camMode + 1), toggleSound });
+setMenuHandlers({ start: tryStart, setCamera: i => setCamMode(i), toggleSound });
+updateSoundButtons();
 updateCamButton();
 buildStadium();
 requestAnimationFrame(loop);

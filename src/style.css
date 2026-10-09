@@ -83,6 +83,11 @@ button { font-family: inherit; }
   padding: 14px 20px; border-radius: 12px; font-weight: 800; font-size: 16px; }
 .btn-sec:hover { background: rgba(255,255,255,.16); }
 .hint { color: var(--muted); font-size: 14px; }
+.btn-icon { width: 54px; height: 54px; flex: 0 0 auto; border-radius: 12px; border: 1px solid rgba(255,255,255,.3); background: rgba(255,255,255,.08);
+  color: #fff; font-size: 22px; cursor: pointer; display: grid; place-items: center; padding: 0; }
+.btn-icon:hover { background: rgba(255,255,255,.16); }
+#soundBtn { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.25); color: #fff; border-radius: 10px;
+  padding: 6px 10px; font-size: 16px; cursor: pointer; }
 kbd { font: 700 12px ui-monospace, Consolas, monospace; padding: 3px 7px; border-radius: 6px; background: rgba(255,255,255,.12);
   border: 1px solid rgba(255,255,255,.25); border-bottom-width: 3px; }
 
@@ -171,8 +176,9 @@ kbd { font: 700 12px ui-monospace, Consolas, monospace; padding: 3px 7px; border
   .logo { font-size: clamp(54px, 17vw, 92px); }
   .tagline { font-size: 16px; margin: 14px 0 20px; }
   .actions { position: sticky; bottom: 0; z-index: 2; margin: 0 -24px 22px; padding: 12px 24px; background: linear-gradient(180deg, transparent, rgba(5,10,20,.95) 35%); }
-  .btn-play { flex: 1 1 100%; padding: 16px 20px; font-size: 28px; }
-  .btn-sec { flex: 1 1 100%; }
+  .btn-play { flex: 1 1 0; padding: 16px 20px; font-size: 28px; }
+  .over-bg .btn-play { flex-basis: 100%; }
+  .btn-sec { flex: 1 1 0; }
   .score-grid { grid-template-columns: repeat(2, 1fr); }
   .board { padding: 16px; }
 }
@@ -183,7 +189,8 @@ body:not(.touch) .touch-only { display: none !important; }
 body.touch #hud { left: calc(8px + var(--safe-l)); right: calc(8px + var(--safe-r)); top: calc(8px + var(--safe-t)); transform: none;
   justify-content: flex-start; gap: 14px; padding: 6px 8px 6px 14px; }
 body.touch #hud .opt { display: none; }
-body.touch #hud #camBtn { margin-left: auto; padding: 8px 12px; }
+body.touch #hud #soundBtn { margin-left: auto; padding: 8px 10px; }
+body.touch #hud #camBtn { padding: 8px 12px; }
 body.touch .bar { width: 64px; }
 body.touch #map { top: calc(64px + var(--safe-t)); bottom: auto; right: calc(8px + var(--safe-r)); width: 124px; height: auto; opacity: .9; }
 body.touch #toast { bottom: auto; top: calc(66px + var(--safe-t)); }
