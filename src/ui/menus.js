@@ -126,8 +126,8 @@ export function showMenu() {
       ${controlsHelp()}
       <div class="map-legend" aria-label="Legenda do mini-mapa">
         <span>Mini-mapa:</span>
-        <span><i class="lg-star"></i>Ronaldo</span><span><i class="lg-dot pt"></i>Portugal</span><span><i class="lg-dot es"></i>Espanha</span>
-        <span><i class="lg-dia st"></i>Seguranças</span><span><i class="lg-dia po"></i>Polícia</span><span><i class="lg-dot me"></i>Tu</span>
+        <span><i class="lg-dot me"></i>Tu</span><span><i class="lg-star"></i>Ronaldo</span>
+        <span><i class="lg-dia"></i>Seguranças e polícia</span><span><i class="lg-ring"></i>Câmara de TV</span><span><i class="lg-dot pl"></i>Jogadores</span>
       </div>
       ${world.xbot ? '' : '<p class="controls">(Modelo 3D indisponível — a usar bonecos simplificados)</p>'}
     </section>
