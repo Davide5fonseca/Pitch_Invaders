@@ -2,7 +2,13 @@
 <html lang="pt">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&display=swap">
 <title>Pitch Invaders</title>
 <meta name="description" content="Invade o relvado, tira selfies com o craque, marca golos e foge aos seguranças. Jogo 3D grátis no browser.">
 <meta name="theme-color" content="#0a1424">
@@ -30,21 +36,28 @@
 <div id="vig" class="fx"></div>
 <div id="tired" class="fx"></div>
 <div id="hud" class="hidden">
-  <div class="stat"><b id="sScore">0</b><span>Pontos</span></div>
+  <div class="stat main"><b id="sScore">0</b><span>Pontos</span></div>
   <div class="stat"><b id="sTime">0.0</b><span>Segundos</span></div>
-  <div class="stat"><b id="sSelfies">0</b><span>Selfies</span></div>
-  <div class="stat"><b id="sGoals">0</b><span>Golos</span></div>
-  <div class="stat"><b id="sStewards">0</b><span>Seguranças</span></div>
-  <div class="stat"><div class="bar"><i id="sStamina"></i></div><span>Fôlego</span></div>
-  <div class="stat"><div id="dash"></div><span>Finta</span></div>
+  <div class="stat opt"><b id="sSelfies">0</b><span>Selfies</span></div>
+  <div class="stat opt"><b id="sGoals">0</b><span>Golos</span></div>
+  <div class="stat opt"><b id="sStewards">0</b><span>Seguranças</span></div>
+  <div class="stat stamina"><div class="bar"><i id="sStamina"></i></div><span>Fôlego</span></div>
+  <div class="stat opt"><div id="dash"></div><span>Finta</span></div>
   <button id="camBtn" title="Mudar de câmara (C)">📷 TV</button>
 </div>
 <canvas id="map" class="hidden" width="226" height="152"></canvas>
 <div id="gopro" class="hidden"><span class="rec">● REC</span><span id="tc">00:00:00</span><span>🔋 87%</span></div>
 <div id="warn" class="hidden">⚠ ATRÁS DE TI!</div>
 <div id="live" class="hidden"><span class="dot">●</span> EM DIRETO · ECRÃ GIGANTE <b>+40/s</b></div>
+<!-- Controlos de toque (telemóvel) -->
+<div id="touch" class="hidden">
+  <div id="stick"><div id="knob"></div></div>
+  <button id="dashBtn" aria-label="Finta"><span>FINTA</span></button>
+</div>
 <div id="toast"></div>
-<div id="overlay"><div class="card"><h1>PITCH INVADERS</h1><p>A carregar os jogadores…</p></div></div>
+<div id="overlay" class="menu-bg">
+  <div class="loading"><h1 class="logo"><span>PITCH</span><span>INVADERS</span></h1><div class="spinner"></div><p>A entrar no estádio…</p></div>
+</div>
 <div id="flash"></div>
 <script type="module" src="/src/main.js"></script>
 </body>

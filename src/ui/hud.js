@@ -20,6 +20,7 @@ export function updateHud() {
   st.style.background = game.stamina > 30 ? '#4ade80' : '#f87171';
   const p = 1 - game.dashCd / PLAYER.dashCooldown;
   $('dash').style.background = game.dashCd > 0 ? `conic-gradient(var(--pink) ${p * 360}deg, #444 0)` : 'var(--pink)';
+  $('dashBtn').style.setProperty('--cd', (p * 360).toFixed(0) + 'deg');
 }
 
 let toastT;

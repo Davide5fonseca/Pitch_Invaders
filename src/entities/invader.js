@@ -4,7 +4,7 @@ import { COLORS, PLAYER } from '../config.js';
 import { clamp, dist, forward, right } from '../utils.js';
 import { makeEntity, ring } from './character.js';
 import { KITS } from './kits.js';
-import { keys, pointer, pointerGround } from '../systems/input.js';
+import { keys, pointer, stick, pointerGround } from '../systems/input.js';
 
 export function buildInvader() {
   const inv = makeEntity(KITS.invader, 0, 36);
@@ -18,10 +18,12 @@ export function resetInvader() {
   view.yaw = Math.PI; view.pitch = 0;
 }
 
-// Lê o input e devolve a direção desejada { ix, iz } e se o toque pede sprint
+// Lê o input e devolve a direção desejada { ix, iz } e se o joystick/rato pede sprint
 function readInput(dt) {
   const inv = world.invader;
   let ix = 0, iz = 0, far = false;
+  const sm = Math.hypot(stick.x, stick.y);
+  if (stick.active && sm > 0.92) far = true;         // joystick até ao fundo = sprint
   if (relControls()) {
     // Controlos relativos para onde estás a olhar (câmaras Ombro / GoPro / Cabeça)
     let fwd = 0, side = 0, turn = 0;
@@ -31,11 +33,9 @@ function readInput(dt) {
     if (keys.KeyA) side--;
     if (keys.KeyE || keys.ArrowRight) turn++;
     if (keys.KeyQ || keys.ArrowLeft) turn--;
-    if (pointer.active) {                       // joystick virtual no telemóvel
-      const jx = pointer.cx - pointer.sx, jy = pointer.cy - pointer.sy;
-      turn += clamp(jx / 70, -1, 1);
-      fwd += clamp(-jy / 50, -1, 1);
-      far = -jy > 110;
+    if (stick.active) {                         // joystick: cima = frente, lados = rodar
+      fwd -= stick.y;
+      turn += stick.x * 0.9;
     }
     view.yaw -= turn * 2.6 * dt;
     const f = forward(view.yaw), r = right(view.yaw);
@@ -47,6 +47,7 @@ function readInput(dt) {
     if (keys.ArrowRight || keys.KeyD) ix++;
     if (keys.ArrowUp || keys.KeyW) iz--;
     if (keys.ArrowDown || keys.KeyS) iz++;
+    if (stick.active) { ix += stick.x; iz += stick.y; }
     if (pointer.active) {
       const g = pointerGround();
       if (g) {

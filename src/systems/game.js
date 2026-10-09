@@ -1,9 +1,9 @@
 // Regras do jogo: começar, pontuar (selfies, golos, dribles, TV), aparecer seguranças e ser apanhado.
 import { game, world, score } from '../state.js';
 import { STEWARDS, SCORE } from '../config.js';
-import { dist, storageSet } from '../utils.js';
+import { $, dist, storageSet, isTouch } from '../utils.js';
 import { audio, ambience, beep, roar, whistle, ooh } from './audio.js';
-import { lockMouse, unlockMouse, pointer } from './input.js';
+import { lockMouse, unlockMouse, releaseAll } from './input.js';
 import { moveZone } from './broadcast.js';
 import { resetInvader, updateInvader, startDash } from '../entities/invader.js';
 import { starRunAway } from '../entities/players.js';
@@ -14,6 +14,16 @@ import { hideOverlay, showGameOver } from '../ui/menus.js';
 import { float } from '../ui/floats.js';
 
 let firstGame = true;
+
+// Vibração curta no telemóvel (Android; o iPhone ignora)
+const buzz = ms => { try { navigator.vibrate?.(ms); } catch (e) {} };
+
+// No telemóvel, joga em ecrã inteiro (tem de ser pedido num toque do jogador)
+function goFullscreen() {
+  if (!isTouch() || document.fullscreenElement) return;
+  const el = document.documentElement;
+  try { const p = el.requestFullscreen?.({ navigationUI: 'hide' }); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+}
 
 function reset() {
   resetInvader();
@@ -35,10 +45,14 @@ export function tryStart() {
   game.state = 'play';
   hideOverlay();
   showHud(true);
+  $('touch').classList.toggle('hidden', !isTouch());
+  goFullscreen();
   lockMouse();
   roar(2);
   if (firstGame) {
-    toast(`📺 Entra no círculo vermelho para apareceres no ecrã gigante (+${SCORE.tvPerSecond}/s)`);
+    toast(isTouch()
+      ? `🕹️ Joystick à esquerda · FINTA à direita · 📺 entra no círculo vermelho (+${SCORE.tvPerSecond}/s)`
+      : `📺 Entra no círculo vermelho para apareceres no ecrã gigante (+${SCORE.tvPerSecond}/s)`);
     firstGame = false;
   }
 }
@@ -48,7 +62,10 @@ function gameOver() {
   game.overAt = performance.now();
   game.live = false;
   unlockMouse();
-  pointer.active = false;
+  releaseAll();
+  $('touch').classList.add('hidden');
+  showHud(false);
+  buzz([80, 60, 200]);
   whistle();
   game.shake = 0.4;
   world.invader.vx = world.invader.vz = 0;
@@ -70,6 +87,7 @@ function trySelfie() {
   float(`+${SCORE.selfie} SELFIE! 📸`, star.x, star.z, '#ffd166');
   beep(880, 0.08); setTimeout(() => beep(1320, 0.12), 80);
   starRunAway(invader);
+  buzz(25);
   spawnSteward();
 }
 
@@ -80,6 +98,7 @@ function onGoal() {
   roar(2.5);
   game.shake = 0.6;
   game.celebrate = 2.5;
+  buzz([40, 40, 40]);
   resetBall();
   spawnSteward();
 }
@@ -89,6 +108,7 @@ function onDodge(n) {
   const inv = world.invader;
   float(`DRIBLE! +${SCORE.dodge * n}`, inv.x, inv.z, '#8ecae6');
   ooh();
+  buzz(30);
 }
 
 export function updatePlay(dt) {

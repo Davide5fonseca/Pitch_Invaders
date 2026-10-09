@@ -6,8 +6,13 @@ import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
-export const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+// Qualidade: telemóveis começam mais leves; se o jogo ficar lento, baixa sozinha (adaptQuality)
+const mobile = matchMedia('(pointer: coarse)').matches;
+const RATIOS = [1, 1.5, 2];
+export const quality = { level: mobile ? 1 : 2, feedEvery: mobile ? 3 : 2 };
+
+export const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio, RATIOS[quality.level]));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -30,7 +35,7 @@ scene.environmentIntensity = 0.3;
 scene.add(new THREE.HemisphereLight('#cfe0ff', '#24402a', 1.0));
 export const sun = new THREE.DirectionalLight('#ffffff', 2.8);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.mapSize.setScalar(mobile ? 1024 : 2048);
 Object.assign(sun.shadow.camera, { left: -30, right: 30, top: 30, bottom: -30, near: 1, far: 140 });
 sun.shadow.camera.updateProjectionMatrix();
 sun.shadow.bias = -0.0005;
@@ -79,4 +84,22 @@ export function renderInset(insetScene, insetCamera, x, y, w, h) {
   renderer.render(insetScene, insetCamera);
   renderer.setScissorTest(false);
   renderer.setViewport(0, 0, innerWidth, innerHeight);
+}
+
+// Mede o tempo médio por imagem durante o jogo; abaixo de ~40 fps baixa a resolução
+let acc = 0, frames = 0;
+export function adaptQuality(dt) {
+  acc += Math.min(dt, 0.2); frames++;
+  if (acc < 3) return;
+  const avg = acc / frames;
+  acc = 0; frames = 0;
+  if (avg > 1 / 40 && quality.level > 0) {
+    quality.level--;
+    quality.feedEvery = Math.min(4, quality.feedEvery + 1);
+    const pr = Math.min(devicePixelRatio, RATIOS[quality.level]);
+    renderer.setPixelRatio(pr);
+    composer.setPixelRatio(pr);
+    renderer.setSize(innerWidth, innerHeight);
+    composer.setSize(innerWidth, innerHeight);
+  }
 }

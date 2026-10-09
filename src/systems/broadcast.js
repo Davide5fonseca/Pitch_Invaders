@@ -1,10 +1,10 @@
 // Câmara de TV: filma um círculo "EM DIRETO" no relvado. Quem lá estiver aparece
 // nos ecrãs gigantes do estádio (e num canto do teu ecrã) e ganha pontos.
 import * as THREE from 'three';
-import { renderer, scene, renderInset } from './renderer.js';
+import { renderer, scene, renderInset, quality } from './renderer.js';
 import { game, world } from '../state.js';
 import { BROADCAST, SCORE, HW } from '../config.js';
-import { $, rand, clamp, dist } from '../utils.js';
+import { $, rand, clamp, dist, isTouch } from '../utils.js';
 import { makeEntity } from '../entities/character.js';
 import { KITS } from '../entities/kits.js';
 import { setExcitement } from './audio.js';
@@ -127,7 +127,7 @@ export function updateBroadcast(dt, now) {
   crew.ch.update(dt, 0);
 
   // Filmar para os ecrãs gigantes (em frames alternados, para poupar)
-  if (++frame % 2 === 0) {
+  if (++frame % quality.feedEvery === 0) {
     for (const s of screens) s.visible = false;
     renderer.shadowMap.autoUpdate = false;
     renderer.setRenderTarget(feed);
@@ -142,7 +142,14 @@ export function renderLiveInset() {
   const label = $('live');
   label.classList.toggle('hidden', !game.live);
   if (!game.live) return;
-  const w = Math.round(clamp(innerWidth * 0.26, 150, 360)), h = Math.round(w * 9 / 16);
-  label.style.bottom = (16 + h + 6) + 'px';
-  renderInset(insetScene, insetCam, 16, 16, w, h);
+  const w = Math.round(clamp(innerWidth * 0.26, 140, 360)), h = Math.round(w * 9 / 16);
+  if (isTouch()) {
+    // No telemóvel fica em cima à esquerda, longe do joystick
+    const top = 66 + 28;
+    label.style.bottom = ''; label.style.top = (top - 26) + 'px'; label.style.left = '8px';
+    renderInset(insetScene, insetCam, 8, innerHeight - top - h, w, h);
+  } else {
+    label.style.top = ''; label.style.left = ''; label.style.bottom = (16 + h + 6) + 'px';
+    renderInset(insetScene, insetCam, 16, 16, w, h);
+  }
 }

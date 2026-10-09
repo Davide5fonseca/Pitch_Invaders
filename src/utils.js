@@ -9,6 +9,9 @@ export const pad2 = n => String(n).padStart(2, '0');
 export const forward = yaw => ({ x: Math.sin(yaw), z: Math.cos(yaw) });
 export const right = yaw => ({ x: -Math.cos(yaw), z: Math.sin(yaw) });
 
+// Ecrã de toque? (classe "touch" no body, ligada em input.js)
+export const isTouch = () => document.body.classList.contains('touch');
+
 export function storageGet(key, fallback) {
   try { const v = localStorage.getItem(key); return v === null ? fallback : v; } catch (e) { return fallback; }
 }

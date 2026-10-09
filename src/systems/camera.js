@@ -6,7 +6,7 @@ import { CAM_MODES } from '../config.js';
 import { $, rand, forward, right, storageSet } from '../utils.js';
 import { input, unlockMouse } from './input.js';
 import { toast } from '../ui/hud.js';
-import { showMenu } from '../ui/menus.js';
+import { updateMenuCamera } from '../ui/menus.js';
 
 const camPos = new THREE.Vector3(0, 40, 80), camLook = new THREE.Vector3(), tmp = new THREE.Vector3();
 
@@ -22,11 +22,11 @@ export function setCamMode(i) {
   view.pitch = 0;
   if (!relControls()) unlockMouse();
   if (game.state === 'loading') return;
-  if (game.state === 'menu') showMenu();
+  if (game.state === 'menu') { updateMenuCamera(); return; }
   const touch = input.lastPointerType === 'touch';
   toast(`📷 ${camMode().name} — ` + (!relControls()
-    ? (touch ? 'toca onde queres ir' : 'WASD / setas movem no ecrã')
-    : touch ? 'arrasta o dedo: cima = correr, lados = rodar'
+    ? (touch ? 'o joystick move-te no ecrã' : 'WASD / setas movem no ecrã')
+    : touch ? 'joystick: cima = correr, lados = rodar · arrasta à direita para olhar'
             : 'clica para olhar com o rato · W/S frente/trás · A/D lado · Q/E rodar · clique = finta'));
 }
 
@@ -34,19 +34,22 @@ export function updateCamera(dt) {
   const inv = world.invader, id = camMode().id;
   let fov = camMode().fov;
   const f = forward(view.yaw), r = right(view.yaw);
+  // Telemóvel na vertical: mais campo de visão e câmara TV mais afastada
+  const aspect = innerWidth / innerHeight, portrait = Math.max(0, 1 - aspect);
+  const menu = game.state === 'loading' || game.state === 'menu';
 
-  if (game.state === 'loading' || game.state === 'menu') {
-    // Volta lenta ao estádio
-    const a = performance.now() * 0.00006;
-    camPos.set(Math.sin(a) * 80, 40, Math.cos(a) * 80);
-    camLook.set(0, 0, 0);
+  if (menu) {
+    // Sobrevoo lento e baixo do estádio, como numa transmissão antes do jogo
+    const t = performance.now() * 0.001, a = t * 0.045, rad = 58 + Math.sin(t * 0.07) * 10;
+    camPos.set(Math.sin(a) * rad, 13 + Math.sin(t * 0.11) * 5, Math.cos(a) * rad * 0.75);
+    camLook.set(Math.sin(a + 0.6) * 12, 2, Math.cos(a + 0.6) * 6);
     camera.position.copy(camPos);
     camera.lookAt(camLook);
-    fov = 50;
+    fov = 46 + portrait * 30;
   } else if (id === 'tv') {
     const k = 1 - Math.exp(-dt * 4);
-    camPos.lerp(tmp.set(inv.x * 0.92, 15, inv.z + 18), k);
-    camLook.lerp(tmp.set(inv.x + inv.vx * 0.25, 1, inv.z - 3 + inv.vz * 0.25), k * 1.5);
+    camPos.lerp(tmp.set(inv.x * 0.92, 15 + portrait * 10, inv.z + 18 + portrait * 2), k);
+    camLook.lerp(tmp.set(inv.x + inv.vx * 0.25, 1, inv.z - 3 - portrait * 8 + inv.vz * 0.25), k * 1.5);
     camera.position.copy(camPos);
     camera.lookAt(camLook);
   } else if (id === 'ombro') {
@@ -76,7 +79,12 @@ export function updateCamera(dt) {
     camera.rotation.set(p, view.yaw + Math.PI, roll, 'YXZ');
   }
 
+  if (!menu && portrait > 0) fov = Math.min(fov * (1 + portrait * (id === 'tv' ? 0.35 : 0.6)), 118);
   if (game.state === 'play' && game.dashT > 0) fov += 12;
+
+  // No menu (ecrã largo), o estádio aparece à direita do painel
+  if (menu && innerWidth > 860) camera.setViewOffset(innerWidth, innerHeight, -innerWidth * 0.18, 0, innerWidth, innerHeight);
+  else if (camera.view && camera.view.enabled) camera.clearViewOffset();
   if (Math.abs(camera.fov - fov) > 0.01) {
     camera.fov += (fov - camera.fov) * Math.min(1, dt * 10);
     camera.updateProjectionMatrix();

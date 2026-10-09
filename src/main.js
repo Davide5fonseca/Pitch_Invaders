@@ -1,6 +1,6 @@
 // Arranque e ciclo principal do jogo.
 import './style.css';
-import { render } from './systems/renderer.js';
+import { render, adaptQuality } from './systems/renderer.js';
 import { game, view, world, inGame, firstPerson, relControls, camMode } from './state.js';
 import { buildStadium, updateCrowd } from './world/stadium.js';
 import { loadModel, place } from './entities/character.js';
@@ -14,7 +14,7 @@ import { tryStart, dash, updatePlay } from './systems/game.js';
 import { buildBroadcast, updateBroadcast, renderLiveInset, zoneState } from './systems/broadcast.js';
 import { updateHud } from './ui/hud.js';
 import { drawMap } from './ui/minimap.js';
-import { showMenu } from './ui/menus.js';
+import { showMenu, setMenuHandlers } from './ui/menus.js';
 import { updateFloats } from './ui/floats.js';
 import { updateScreenFx } from './ui/screenfx.js';
 
@@ -22,8 +22,9 @@ let last = performance.now();
 
 function loop(now) {
   requestAnimationFrame(loop);
-  const dt = Math.min(0.05, (now - last) / 1000);
+  const raw = (now - last) / 1000, dt = Math.min(0.05, raw);
   last = now;
+  if (game.state === 'play' && !document.hidden) adaptQuality(raw);
   game.shake = Math.max(0, game.shake - dt);
   game.celebrate = Math.max(0, game.celebrate - dt);
 
@@ -63,6 +64,7 @@ function loop(now) {
 if (import.meta.env.DEV) window.__game = { game, view, world, zone: zoneState };
 
 initInput({ start: tryStart, dash, cycleCamera: () => setCamMode(view.camMode + 1) });
+setMenuHandlers({ start: tryStart, setCamera: i => setCamMode(i) });
 updateCamButton();
 buildStadium();
 requestAnimationFrame(loop);
